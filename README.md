@@ -1,97 +1,259 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Farm Connect - Haron India
 
-# Getting Started
+A React Native mobile application for agricultural services, connecting farmers with seeds, equipment, and produce trading.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## 🌱 Overview
 
-## Step 1: Start Metro
+Farm Connect is a comprehensive agricultural platform that enables farmers to:
+- **Buy** seeds and agricultural inputs
+- **Rent** farming equipment
+- **Sell** their produce
+- Track active listings and transactions
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## 📱 Features
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+### Authentication
+- **Phone Number Login** (Primary method)
+  - OTP verification
+  - Indian country code (+91) support
+- **Email/Password Login** (Alternative method)
+  - Direct access to dashboard
 
-```sh
-# Using npm
-npm start
+### Dashboard
+- **Welcome Section** with personalized greeting
+- **Weather Information** display
+- **Action Cards** for main services:
+  - 🛒 Seeds & Inputs
+  - 🚜 Equipment Rental
+  - 🏷️ Produce Selling
+- **Active Listings** with progress tracking
+- **Status Management** for ongoing transactions
 
-# OR using Yarn
-yarn start
+### Design System
+- **Green Theme** matching agricultural branding
+- **Consistent Typography** and spacing
+- **Responsive Design** for mobile devices
+- **Professional UI/UX** with smooth animations
+
+## 🛠️ Technology Stack
+
+- **React Native** 0.81.4
+- **React** 19.1.0
+- **TypeScript** 5.8.3
+- **React Navigation** 6.x
+- **React Native Safe Area Context**
+- **React Native Gesture Handler**
+- **React Native Vector Icons**
+
+## 📋 Prerequisites
+
+- **Node.js** >= 20
+- **React Native CLI**
+- **Android Studio** (for Android development)
+- **Xcode** (for iOS development)
+- **Java Development Kit (JDK)**
+
+## 🚀 Getting Started
+
+### 1. Clone the Repository
+```bash
+git clone <repository-url>
+cd HaronIndia
 ```
 
-## Step 2: Build and run your app
+### 2. Install Dependencies
+```bash
+npm install
+```
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+### 3. iOS Setup (macOS only)
+```bash
+cd ios
+pod install
+cd ..
+```
+
+### 4. Android Setup
+- Ensure Android Studio is installed
+- Set up Android SDK
+- Create an Android Virtual Device (AVD)
+
+### 5. Run the Application
+
+#### Android
+```bash
+npx react-native run-android
+```
+
+#### iOS
+```bash
+npx react-native run-ios
+```
+
+#### Start Metro Bundler
+```bash
+npm start
+```
+
+## 📁 Project Structure
+
+```
+HaronIndia/
+├── src/
+│   ├── components/          # Reusable UI components
+│   │   ├── Button.js       # Custom button component
+│   │   ├── Input.js        # Form input component
+│   │   └── Card.js         # Card container component
+│   ├── screens/            # Application screens
+│   │   ├── SplashScreen.js
+│   │   ├── SignInScreen.js
+│   │   ├── PhoneVerificationScreen.js
+│   │   └── HomeScreen.js
+│   ├── navigation/         # Navigation configuration
+│   │   └── AppNavigator.js
+│   ├── constants/          # App constants and theme
+│   │   └── theme.js
+│   └── assets/            # Images and icons
+├── android/               # Android-specific code
+├── ios/                   # iOS-specific code
+├── App.tsx               # Main application component
+└── package.json          # Dependencies and scripts
+```
+
+## 🎨 Design System
+
+### Colors
+- **Primary Green**: #4CAF50
+- **Primary Dark**: #388E3C
+- **Primary Light**: #C8E6C9
+- **Background**: #FFFFFF
+- **Text**: #212121
+
+### Typography
+- **H1**: 32px, Bold
+- **H2**: 24px, Bold
+- **H3**: 20px, Semi-bold
+- **Body**: 16px, Regular
+- **Caption**: 14px, Regular
+
+### Spacing
+- **XS**: 4px
+- **SM**: 8px
+- **MD**: 16px
+- **LG**: 24px
+- **XL**: 32px
+- **XXL**: 48px
+
+## 🔧 Available Scripts
+
+- `npm start` - Start Metro bundler
+- `npm run android` - Run on Android
+- `npm run ios` - Run on iOS
+- `npm run lint` - Run ESLint
+- `npm test` - Run tests
+
+## 📱 Screens
+
+### 1. Splash Screen
+- Farm Connect logo
+- Automatic navigation to phone verification
+
+### 2. Phone Verification Screen
+- Phone number input with country code
+- OTP verification process
+- Alternative email login option
+
+### 3. Sign In Screen
+- Phone number and password fields
+- Alternative phone verification option
+
+### 4. Home Screen
+- Personalized welcome message
+- Weather information
+- Service action cards
+- Active listings with progress tracking
+
+## 🔐 Authentication Flow
+
+### Primary Flow (Phone Login)
+1. **Splash Screen** → **Phone Verification**
+2. **Enter Phone Number** → **Send OTP**
+3. **Enter OTP** → **Home Dashboard**
+
+### Alternative Flow (Email Login)
+1. **Phone Verification** → **"Sign in with Email"**
+2. **Enter Email + Password** → **Home Dashboard**
+
+## 🧪 Testing Credentials
+
+For testing purposes, the following dummy credentials are available:
+
+### Email/Password Login
+- **Email:** `user@farmconnect.com` | **Password:** `password123`
+- **Email:** `farmer@test.com` | **Password:** `test123`
+- **Email:** `admin@demo.com` | **Password:** `admin123`
+
+### Phone Number Login
+- Any 10-digit phone number will work for OTP verification
+- OTP: Any 4-digit number (for demo purposes)
+
+> **Note:** These are dummy credentials for testing only. No actual authentication is performed.
+
+## 🎯 Key Components
+
+### Button Component
+- Multiple variants (primary, secondary, outline)
+- Different sizes (small, medium, large)
+- Disabled states
+- Custom styling support
+
+### Input Component
+- Label support
+- Error handling
+- Right icon support
+- Focus states
+- Validation
+
+### Card Component
+- Multiple variants
+- Shadow effects
+- Rounded corners
+- Flexible content
+
+## 🚀 Deployment
 
 ### Android
-
-```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
-```
+1. Generate signed APK
+2. Upload to Google Play Store
 
 ### iOS
+1. Archive the app in Xcode
+2. Upload to App Store Connect
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+## 🤝 Contributing
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
-```sh
-bundle install
-```
+## 📄 License
 
-Then, and every time you update your native dependencies, run:
+This project is licensed under the MIT License.
 
-```sh
-bundle exec pod install
-```
+## 📞 Support
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+For support and questions, please contact the development team.
 
-```sh
-# Using npm
-npm run ios
+## 🔄 Version History
 
-# OR using Yarn
-yarn ios
-```
+- **v1.0.0** - Initial release with core features
+  - Authentication system
+  - Dashboard with action cards
+  - Active listings management
+  - Responsive design
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+---
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+**Farm Connect** - Connecting farmers with agricultural opportunities 🌾
