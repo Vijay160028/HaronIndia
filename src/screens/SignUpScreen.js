@@ -61,6 +61,9 @@ const SignUpScreen = ({ navigation }) => {
         userType,
       });
 
+      // Extract token from response (handle different response formats)
+      const token = response.token || response.data?.token || response.authtoken || response.authToken || null;
+
       // Save user data and token
       const userData = {
         userId: response.data.userId,
@@ -74,7 +77,7 @@ const SignUpScreen = ({ navigation }) => {
         loginMethod: 'signup',
       };
 
-      await saveUserData(userData, response.token);
+      await saveUserData(userData, token);
 
       // Show success message and navigate
       Alert.alert(
@@ -93,7 +96,7 @@ const SignUpScreen = ({ navigation }) => {
                   email: response.data.email,
                 },
                 isSignUp: true,
-                token: response.token,
+                token: token,
               });
             },
           },

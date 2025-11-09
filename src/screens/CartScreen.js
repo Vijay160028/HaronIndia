@@ -114,8 +114,8 @@ const CartScreen = ({ navigation }) => {
               const productId = item.id || item.productId || item._id;
               const productName = item.name || item.title || 'Product';
               const productImage = item.image || item.imageUrl || item.thumbnail || 'https://via.placeholder.com/400';
-              const productPrice = parsePrice(item.price || item.pricePerUnit || 0);
-              const productUnit = item.unit || item.unitType || 'per unit';
+              const productPrice = parsePrice(item.rentalPrice || item.price || item.pricePerUnit || 0);
+              const productUnit = item.rentalUnit || item.unit || item.unitType || 'per unit';
               const quantity = item.quantity || 1;
               const itemTotal = productPrice * quantity;
 

@@ -30,9 +30,11 @@ const SplashScreen = ({ navigation }) => {
       style={styles.container}
     >
       <View style={styles.logoContainer}>
-        <View style={styles.logo}>
-          <Text style={styles.logoText}>🌱</Text>
-        </View>
+        <Image 
+          source={require('../assets/images/app_logo.png')}
+          style={styles.logoImage}
+          resizeMode="contain"
+        />
         <ActivityIndicator 
           size="small" 
           color="#2E7D32" 
@@ -53,13 +55,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logo: {
-    width: 100,
-    height: 100,
-    backgroundColor: '#F5F5F5',
-    borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
+  logoImage: {
+    width: 150,
+    height: 150,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -68,9 +66,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 8,
-  },
-  logoText: {
-    fontSize: 40,
   },
   loadingIndicator: {
     marginTop: 20,

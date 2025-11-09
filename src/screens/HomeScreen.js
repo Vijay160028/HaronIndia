@@ -49,7 +49,7 @@ const HomeScreen = ({ navigation }) => {
       subtitle: 'Equipment',
       icon: 'tractor',
       iconFamily: 'MaterialCommunityIcons',
-      onPress: () => console.log('Rent pressed'),
+      onPress: () => navigation.navigate('Rent'),
     },
     {
       id: 3,
@@ -57,7 +57,7 @@ const HomeScreen = ({ navigation }) => {
       subtitle: 'Produce',
       icon: 'local-offer',
       iconFamily: 'MaterialIcons',
-      onPress: () => console.log('Sell pressed'),
+      onPress: () => navigation.navigate('Sell'),
     },
   ];
 
@@ -92,9 +92,11 @@ const HomeScreen = ({ navigation }) => {
         {/* Fixed Header */}
         <View style={styles.header}>
           <View style={styles.logoContainer}>
-            <View style={styles.logoIcon}>
-              <MaterialCommunityIcons name="sprout" size={24} color="#2E7D32" />
-            </View>
+            <Image 
+              source={require('../assets/images/app_logo.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
             <View style={styles.logoTextContainer}>
               <Text style={styles.appName}>Farm Connect</Text>
               <Text style={styles.appSubtitle}>Farm Portal</Text>
@@ -207,13 +209,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  logoIcon: {
+  logoImage: {
     width: 40,
     height: 40,
-    backgroundColor: '#E8F5E8',
-    borderRadius: 8, 
-    alignItems: 'center',
-    justifyContent: 'center',
     marginRight: 12,
   },
   logoTextContainer: {

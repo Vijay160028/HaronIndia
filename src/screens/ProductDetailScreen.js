@@ -7,7 +7,7 @@ import AuthAPI from '../services/api';
 import { useCart } from '../context/CartContext';
 
 const ProductDetailScreen = ({ navigation, route }) => {
-  const { productId } = route.params || {};
+  const { productId, isRental } = route.params || {};
   const [product, setProduct] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -27,17 +27,24 @@ const ProductDetailScreen = ({ navigation, route }) => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await AuthAPI.getProductById(productId);
+      let response;
+      if (isRental) {
+        // Fetch rental equipment details
+        response = await AuthAPI.getRentalById(productId);
+      } else {
+        // Fetch product details
+        response = await AuthAPI.getProductById(productId);
+      }
       // Handle different response formats
-      const productData = response.data || response.product || response;
+      const productData = response.data || response.product || response.rental || response;
       setProduct(productData);
     } catch (err) {
-      setError(err.message || 'Failed to load product details');
-      Alert.alert('Error', err.message || 'Failed to load product details. Please try again.');
+      setError(err.message || `Failed to load ${isRental ? 'rental' : 'product'} details`);
+      Alert.alert('Error', err.message || `Failed to load ${isRental ? 'rental' : 'product'} details. Please try again.`);
     } finally {
       setIsLoading(false);
     }
-  }, [productId]);
+  }, [productId, isRental]);
 
   const handleAddToCart = async () => {
     if (!product) return;
@@ -120,14 +127,21 @@ const ProductDetailScreen = ({ navigation, route }) => {
   const productName = product.name || product.title || 'Product';
   const productDescription = product.description || product.desc || product.details || 'No description available';
   const productImage = product.image || product.imageUrl || product.thumbnail || 'https://via.placeholder.com/400';
-  const productPrice = product.price || product.pricePerUnit || '0';
-  const productUnit = product.unit || product.unitType || 'per unit';
+  const productPrice = isRental 
+    ? (product.rentalPrice || product.price || product.pricePerUnit || '0')
+    : (product.price || product.pricePerUnit || '0');
+  const productUnit = isRental 
+    ? (product.rentalUnit || product.unit || 'per day')
+    : (product.unit || product.unitType || 'per unit');
   const productRating = product.rating || product.averageRating || 0;
   const productReviews = product.reviews || product.reviewCount || 0;
   const productCategory = product.category || product.categoryName || 'Uncategorized';
   
   // Fix inStock logic: prioritize explicit inStock value, then check stock quantity
-  const inStock = product.inStock === true || (product.inStock !== false && (product.stock === undefined || product.stock > 0));
+  // For rentals, check availability instead
+  const inStock = isRental 
+    ? (product.isAvailable !== false && product.available !== false)
+    : (product.inStock === true || (product.inStock !== false && (product.stock === undefined || product.stock > 0)));
   const stock = product.stock || product.quantity || 0;
 
   return (
@@ -159,7 +173,9 @@ const ProductDetailScreen = ({ navigation, route }) => {
           />
           {!inStock && (
             <View style={styles.outOfStockBadge}>
-              <Text style={styles.outOfStockText}>Out of Stock</Text>
+              <Text style={styles.outOfStockText}>
+                {isRental ? 'Unavailable' : 'Out of Stock'}
+              </Text>
             </View>
           )}
         </View>
@@ -182,7 +198,9 @@ const ProductDetailScreen = ({ navigation, route }) => {
             {inStock && (
               <View style={styles.stockContainer}>
                 <Icon name="check-circle" size={16} color="#2E7D32" />
-                <Text style={styles.stockText}>In Stock (available)</Text>
+                <Text style={styles.stockText}>
+                  {isRental ? 'Available for Rent' : `In Stock (available)`}
+                </Text>
               </View>
             )}
           </View>
@@ -194,7 +212,9 @@ const ProductDetailScreen = ({ navigation, route }) => {
 
           {/* Quantity Selector */}
           <View style={styles.quantityContainer}>
-            <Text style={styles.quantityLabel}>Quantity:</Text>
+            <Text style={styles.quantityLabel}>
+              {isRental ? 'Rental Period (Days):' : 'Quantity:'}
+            </Text>
             <View style={styles.quantityControls}>
               <TouchableOpacity 
                 style={styles.quantityButton}
@@ -207,9 +227,9 @@ const ProductDetailScreen = ({ navigation, route }) => {
               <TouchableOpacity 
                 style={styles.quantityButton}
                 onPress={increaseQuantity}
-                disabled={!inStock || quantity >= stock}
+                disabled={!inStock || (!isRental && quantity >= stock)}
               >
-                <Icon name="add" size={20} color={(!inStock || quantity >= stock) ? "#CCCCCC" : "#2E7D32"} />
+                <Icon name="add" size={20} color={(!inStock || (!isRental && quantity >= stock)) ? "#CCCCCC" : "#2E7D32"} />
               </TouchableOpacity>
             </View>
           </View>
@@ -258,15 +278,19 @@ const ProductDetailScreen = ({ navigation, route }) => {
           onPress={handleAddToCart}
           disabled={!inStock}
         >
-          <Icon name="add-shopping-cart" size={20} color="#2E7D32" />
-          <Text style={styles.cartButtonText}>Add to Cart</Text>
+          <Icon name={isRental ? "event" : "add-shopping-cart"} size={20} color="#2E7D32" />
+          <Text style={styles.cartButtonText}>
+            {isRental ? 'Add to Rental Cart' : 'Add to Cart'}
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={[styles.buyButton, !inStock && styles.buyButtonDisabled]}
           onPress={handleBuyNow}
           disabled={!inStock}
         >
-          <Text style={styles.buyButtonText}>Buy Now</Text>
+          <Text style={styles.buyButtonText}>
+            {isRental ? 'Rent Now' : 'Buy Now'}
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

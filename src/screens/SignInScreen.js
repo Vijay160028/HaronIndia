@@ -41,9 +41,8 @@ const SignInScreen = ({ navigation }) => {
         password,
       });
 
-      // Extract token (handle both single token and token object formats)
-      const token = response.token?.accessToken || response.token || null;
-      const refreshToken = response.token?.refreshToken || null;
+      // Extract token from response (handle different response formats)
+      const token = response.token || response.data?.token || response.authtoken || response.authToken || null;
 
       // Save user data and token
       const userData = {

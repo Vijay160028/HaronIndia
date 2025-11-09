@@ -23,7 +23,6 @@ export const UserProvider = ({ children }) => {
   const loadUserData = async () => {
     try {
       const userData = await AsyncStorage.getItem('userData');
-      const token = await AsyncStorage.getItem('authToken');
       const loginStatus = await AsyncStorage.getItem('isLoggedIn');
       
       if (userData) {
@@ -76,6 +75,16 @@ export const UserProvider = ({ children }) => {
     }
   };
 
+  const getAuthToken = async () => {
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      return token;
+    } catch (error) {
+      console.log('Error getting auth token:', error);
+      return null;
+    }
+  };
+
   const value = {
     user,
     isLoading,
@@ -83,6 +92,7 @@ export const UserProvider = ({ children }) => {
     saveUserData,
     clearUserData,
     updateUserData,
+    getAuthToken,
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

@@ -181,6 +181,309 @@ class AuthAPI {
       throw error;
     }
   }
+
+  /**
+   * Get all rental equipment
+   * @returns {Promise<Object>} - Response data with rentals array
+   */
+  static async getRentals() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/rental`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const error = new Error(data.message || 'Failed to fetch rentals');
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      if (error.message === 'Network request failed') {
+        throw new Error('Network error. Please check your internet connection.');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Get rental by ID
+   * @param {string} rentalId - Rental ID
+   * @returns {Promise<Object>} - Response data with rental details
+   */
+  static async getRentalById(rentalId) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/rental/${rentalId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const error = new Error(data.message || 'Failed to fetch rental');
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      if (error.message === 'Network request failed') {
+        throw new Error('Network error. Please check your internet connection.');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new product listing
+   * @param {Object} productData - Product data
+   * @param {string} token - Auth token
+   * @returns {Promise<Object>} - Response data
+   */
+  static async createProduct(productData, token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/products`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        body: JSON.stringify(productData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const error = new Error(data.message || 'Failed to create product');
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      if (error.message === 'Network request failed') {
+        throw new Error('Network error. Please check your internet connection.');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new product listing for sale
+   * @param {Object} productData - Product data (name, category, price, unit, quantity, stock)
+   * @param {string} token - Auth token
+   * @returns {Promise<Object>} - Response data
+   */
+  static async createSellProduct(productData, token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/sell`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        body: JSON.stringify(productData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const error = new Error(data.message || 'Failed to create product listing');
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      if (error.message === 'Network request failed') {
+        throw new Error('Network error. Please check your internet connection.');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Update a product listing
+   * @param {string} productId - Product ID
+   * @param {Object} productData - Updated product data
+   * @param {string} token - Auth token
+   * @returns {Promise<Object>} - Response data
+   */
+  static async updateProduct(productId, productData, token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/products/${productId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        body: JSON.stringify(productData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const error = new Error(data.message || 'Failed to update product');
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      if (error.message === 'Network request failed') {
+        throw new Error('Network error. Please check your internet connection.');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a product listing
+   * @param {string} productId - Product ID
+   * @param {string} token - Auth token
+   * @returns {Promise<Object>} - Response data
+   */
+  static async deleteProduct(productId, token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/products/${productId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const error = new Error(data.message || 'Failed to delete product');
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      if (error.message === 'Network request failed') {
+        throw new Error('Network error. Please check your internet connection.');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a sell product listing
+   * @param {string} productId - Product ID
+   * @param {string} token - Auth token
+   * @returns {Promise<Object>} - Response data
+   */
+  static async deleteSellProduct(productId, token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/sell/${productId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const error = new Error(data.message || 'Failed to delete product');
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      if (error.message === 'Network request failed') {
+        throw new Error('Network error. Please check your internet connection.');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Get my products (products listed by current user)
+   * @param {string} token - Auth token
+   * @returns {Promise<Object>} - Response data with products array
+   */
+  static async getMyProducts(token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/products/my`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const error = new Error(data.message || 'Failed to fetch your products');
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      if (error.message === 'Network request failed') {
+        throw new Error('Network error. Please check your internet connection.');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Get my sell products (products listed for sale by current user)
+   * @param {string} token - Auth token
+   * @returns {Promise<Object>} - Response data with products array
+   */
+  static async getMySellProducts(token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/sell`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const error = new Error(data.message || 'Failed to fetch your products');
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      if (error.message === 'Network request failed') {
+        throw new Error('Network error. Please check your internet connection.');
+      }
+      throw error;
+    }
+  }
 }
 
 export default AuthAPI;

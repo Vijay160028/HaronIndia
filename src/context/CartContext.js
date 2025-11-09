@@ -132,7 +132,7 @@ export const CartProvider = ({ children }) => {
 
   const getCartTotal = () => {
     return cartItems.reduce((total, item) => {
-      const price = parsePrice(item.price || item.pricePerUnit || 0);
+      const price = parsePrice(item.rentalPrice || item.price || item.pricePerUnit || 0);
       const quantity = item.quantity || 1;
       return total + price * quantity;
     }, 0);

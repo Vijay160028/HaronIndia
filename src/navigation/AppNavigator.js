@@ -7,6 +7,9 @@ import SignUpScreen from '../screens/SignUpScreen';
 import PhoneVerificationScreen from '../screens/PhoneVerificationScreen';
 import BottomTabNavigator from './BottomTabNavigator';
 import BuyScreen from '../screens/BuyScreen';
+import RentScreen from '../screens/RentScreen';
+import SellScreen from '../screens/SellScreen';
+import AddProductScreen from '../screens/AddProductScreen';
 import ProductDetailScreen from '../screens/ProductDetailScreen';
 import CartScreen from '../screens/CartScreen';
 
@@ -42,6 +45,9 @@ const AppNavigator = () => {
         <Stack.Screen name="PhoneVerification" component={PhoneVerificationScreen} />
         <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
         <Stack.Screen name="Buy" component={BuyScreen} />
+        <Stack.Screen name="Rent" component={RentScreen} />
+        <Stack.Screen name="Sell" component={SellScreen} />
+        <Stack.Screen name="AddProduct" component={AddProductScreen} />
         <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
         <Stack.Screen name="Cart" component={CartScreen} />
       </Stack.Navigator>
