@@ -1,50 +1,94 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '../context/UserContext';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import { colors, typography, spacing } from '../constants/theme';
+import AuthAPI from '../services/api';
 
 const SignInScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { saveUserData } = useUser();
 
-  const handleSignIn = () => {
+  const handleSignIn = async () => {
+    // Client-side validation
     if (!email || !password) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
-    
-    // Dummy credentials for testing
-    const dummyCredentials = [
-      { email: 'user@farmconnect.com', password: 'password123' },
-      { email: 'farmer@test.com', password: 'test123' },
-      { email: 'admin@demo.com', password: 'admin123' }
-    ];
-    
-    // Check if credentials match any dummy account
-    const isValidCredentials = dummyCredentials.some(
-      cred => cred.email === email && cred.password === password
-    );
-    
-    if (isValidCredentials) {
-      // Save user data
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Call signin API
+      const response = await AuthAPI.signin({
+        email,
+        password,
+      });
+
+      // Extract token (handle both single token and token object formats)
+      const token = response.token?.accessToken || response.token || null;
+      const refreshToken = response.token?.refreshToken || null;
+
+      // Save user data and token
       const userData = {
-        email: email,
-        name: email.split('@')[0], // Extract name from email
+        userId: response.data.userId,
+        fullName: response.data.fullName,
+        email: response.data.email,
+        phoneNumber: response.data.phoneNumber,
+        userType: response.data.userType,
+        profileImage: response.data.profileImage || null,
+        isEmailVerified: response.data.isEmailVerified,
+        isPhoneVerified: response.data.isPhoneVerified,
+        lastLoginAt: response.data.lastLoginAt || new Date().toISOString(),
         loginTime: new Date().toISOString(),
-        loginMethod: 'email'
+        loginMethod: 'email',
       };
-      
-      saveUserData(userData);
-      
-      Alert.alert('Success', 'Login successful!', [
-        { text: 'OK', onPress: () => navigation.navigate('MainTabs') }
+
+      await saveUserData(userData, token);
+
+      // Show success message and navigate
+      Alert.alert('Success', 'Sign in successful!', [
+        {
+          text: 'OK',
+          onPress: () => navigation.navigate('MainTabs'),
+        },
       ]);
-    } else {
-      Alert.alert('Error', 'Invalid email or password');
+    } catch (error) {
+      // Handle API errors
+      let errorMessage = 'An error occurred during sign in. Please try again.';
+
+      if (error.status === 401) {
+        // Invalid credentials
+        errorMessage = error.data?.message || 'Invalid email or password';
+      } else if (error.status === 404) {
+        // User not found
+        errorMessage = 'User not found. Please check your email address.';
+      } else if (error.status === 403) {
+        // Account disabled
+        errorMessage = error.data?.message || 'Account is disabled. Please contact support.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      Alert.alert('Sign In Failed', errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -56,16 +100,13 @@ const SignInScreen = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       <View style={styles.card}>
         <View style={styles.header}>
-          <View style={styles.stepBadge}>
-            <Text style={styles.stepText}>Step 1 of 2</Text>
-          </View>
-          <Text style={styles.title}>Create Your Account</Text>
-          <Text style={styles.subtitle}>Sign up to access your account</Text>
+          <Text style={styles.title}>Welcome Back</Text>
+          <Text style={styles.subtitle}>Sign in to access your account</Text>
         </View>
 
         <View style={styles.form}>
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email Address or Phone Number</Text>
+            <Text style={styles.label}>Email Address</Text>
             <View style={styles.inputWrapper}>
               <TextInput
                 style={styles.inputText}
@@ -76,6 +117,7 @@ const SignInScreen = ({ navigation }) => {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
+                editable={!isLoading}
               />
             </View>
           </View>
@@ -92,12 +134,24 @@ const SignInScreen = ({ navigation }) => {
                 secureTextEntry={true}
                 autoCapitalize="none"
                 autoCorrect={false}
+                editable={!isLoading}
               />
             </View>
           </View>
 
-          <TouchableOpacity style={styles.signInButton} onPress={handleSignIn}>
-            <Text style={styles.signInButtonText}>Sign In</Text>
+          <TouchableOpacity 
+            style={[styles.signInButton, isLoading && styles.signInButtonDisabled]} 
+            onPress={handleSignIn}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator color="#FFFFFF" size="small" />
+                <Text style={[styles.signInButtonText, styles.loadingText]}>Signing In...</Text>
+              </View>
+            ) : (
+              <Text style={styles.signInButtonText}>Sign In</Text>
+            )}
           </TouchableOpacity>
 
           <View style={styles.separator}>
@@ -206,10 +260,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
   },
+  signInButtonDisabled: {
+    opacity: 0.7,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   signInButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  loadingText: {
+    marginLeft: 8,
   },
   separator: {
     flexDirection: 'row',

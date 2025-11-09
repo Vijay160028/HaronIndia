@@ -6,6 +6,9 @@ import SignInScreen from '../screens/SignInScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import PhoneVerificationScreen from '../screens/PhoneVerificationScreen';
 import BottomTabNavigator from './BottomTabNavigator';
+import BuyScreen from '../screens/BuyScreen';
+import ProductDetailScreen from '../screens/ProductDetailScreen';
+import CartScreen from '../screens/CartScreen';
 
 const Stack = createStackNavigator();
 
@@ -38,6 +41,9 @@ const AppNavigator = () => {
         <Stack.Screen name="SignUp" component={SignUpScreen} />
         <Stack.Screen name="PhoneVerification" component={PhoneVerificationScreen} />
         <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
+        <Stack.Screen name="Buy" component={BuyScreen} />
+        <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
+        <Stack.Screen name="Cart" component={CartScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

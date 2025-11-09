@@ -23,6 +23,7 @@ export const UserProvider = ({ children }) => {
   const loadUserData = async () => {
     try {
       const userData = await AsyncStorage.getItem('userData');
+      const token = await AsyncStorage.getItem('authToken');
       const loginStatus = await AsyncStorage.getItem('isLoggedIn');
       
       if (userData) {
@@ -39,10 +40,13 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  const saveUserData = async (userData) => {
+  const saveUserData = async (userData, token = null) => {
     try {
       await AsyncStorage.setItem('userData', JSON.stringify(userData));
       await AsyncStorage.setItem('isLoggedIn', 'true');
+      if (token) {
+        await AsyncStorage.setItem('authToken', token);
+      }
       setUser(userData);
       setIsLoggedIn(true);
     } catch (error) {
@@ -53,6 +57,7 @@ export const UserProvider = ({ children }) => {
   const clearUserData = async () => {
     try {
       await AsyncStorage.removeItem('userData');
+      await AsyncStorage.removeItem('authToken');
       await AsyncStorage.removeItem('isLoggedIn');
       setUser(null);
       setIsLoggedIn(false);

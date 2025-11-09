@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import { colors, typography, spacing } from '../constants/theme';
+import AuthAPI from '../services/api';
+import { useUser } from '../context/UserContext';
 
 const SignUpScreen = ({ navigation }) => {
   const [fullName, setFullName] = useState('');
@@ -11,8 +13,12 @@ const SignUpScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [userType, setUserType] = useState('farmer');
+  const [isLoading, setIsLoading] = useState(false);
+  const { saveUserData } = useUser();
 
-  const handleSignUp = () => {
+  const handleSignUp = async () => {
+    // Client-side validation
     if (!fullName || !phoneNumber || !email || !password || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
@@ -28,12 +34,95 @@ const SignUpScreen = ({ navigation }) => {
       return;
     }
 
-    // Navigate to Step 2 with user data
-    navigation.navigate('PhoneVerification', { 
-      step: '2 of 2', 
-      userData: { fullName, phoneNumber, email, password },
-      isSignUp: true 
-    });
+    // Validate phone number format (Indian mobile: 10 digits starting with 6-9)
+    const phoneRegex = /^[6-9][0-9]{9}$/;
+    if (!phoneRegex.test(phoneNumber)) {
+      Alert.alert('Error', 'Please enter a valid 10-digit Indian mobile number');
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Call signup API
+      const response = await AuthAPI.signup({
+        fullName,
+        phoneNumber,
+        email,
+        password,
+        confirmPassword,
+        userType,
+      });
+
+      // Save user data and token
+      const userData = {
+        userId: response.data.userId,
+        fullName: response.data.fullName,
+        email: response.data.email,
+        phoneNumber: response.data.phoneNumber,
+        userType: response.data.userType,
+        isEmailVerified: response.data.isEmailVerified,
+        isPhoneVerified: response.data.isPhoneVerified,
+        loginTime: new Date().toISOString(),
+        loginMethod: 'signup',
+      };
+
+      await saveUserData(userData, response.token);
+
+      // Show success message and navigate
+      Alert.alert(
+        'Success',
+        'Account created successfully! Please verify your phone number.',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Navigate to Phone Verification screen
+              navigation.navigate('PhoneVerification', {
+                step: '2 of 2',
+                userData: {
+                  userId: response.data.userId,
+                  phoneNumber: response.data.phoneNumber,
+                  email: response.data.email,
+                },
+                isSignUp: true,
+                token: response.token,
+              });
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      // Handle API errors
+      let errorMessage = 'An error occurred during signup. Please try again.';
+
+      if (error.status === 400) {
+        // Validation errors
+        if (error.data && error.data.errors && error.data.errors.length > 0) {
+          const firstError = error.data.errors[0];
+          errorMessage = firstError.message || errorMessage;
+        } else {
+          errorMessage = error.data?.message || errorMessage;
+        }
+      } else if (error.status === 409) {
+        // User already exists
+        const field = error.data?.details?.field || 'email';
+        errorMessage = `This ${field === 'email' ? 'email' : 'phone number'} is already registered. Please use a different one.`;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      Alert.alert('Signup Failed', errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
 
@@ -132,8 +221,19 @@ const SignUpScreen = ({ navigation }) => {
               </View>
             </View>
 
-            <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp}>
-              <Text style={styles.signUpButtonText}>Create Account</Text>
+            <TouchableOpacity 
+              style={[styles.signUpButton, isLoading && styles.signUpButtonDisabled]} 
+              onPress={handleSignUp}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                  <Text style={[styles.signUpButtonText, styles.loadingText]}>Creating Account...</Text>
+                </View>
+              ) : (
+                <Text style={styles.signUpButtonText}>Create Account</Text>
+              )}
             </TouchableOpacity>
           </View>
 
@@ -236,10 +336,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
   },
+  signUpButtonDisabled: {
+    opacity: 0.7,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   signUpButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  loadingText: {
+    marginLeft: 8,
   },
   footer: {
     display: 'flex',

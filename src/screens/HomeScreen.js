@@ -41,7 +41,7 @@ const HomeScreen = ({ navigation }) => {
       subtitle: 'Seeds & Inputs',
       icon: 'shopping-cart',
       iconFamily: 'MaterialIcons',
-      onPress: () => console.log('Buy pressed'),
+      onPress: () => navigation.navigate('Buy'),
     },
     {
       id: 2,
