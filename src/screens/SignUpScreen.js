@@ -15,7 +15,7 @@ const SignUpScreen = ({ navigation }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [userType, setUserType] = useState('farmer');
   const [isLoading, setIsLoading] = useState(false);
-  const { saveUserData } = useUser();
+  const { saveUserData, refetchUserData } = useUser();
 
   const handleSignUp = async () => {
     // Client-side validation
@@ -62,7 +62,20 @@ const SignUpScreen = ({ navigation }) => {
       });
 
       // Extract token from response (handle different response formats)
-      const token = response.token || response.data?.token || response.authtoken || response.authToken || null;
+      let token = response.token || response.data?.token || response.authtoken || response.authToken || null;
+      
+      // Ensure token is a string (not an object)
+      if (token && typeof token !== 'string') {
+        // If token is an object, try to extract the actual token string
+        if (token.token) {
+          token = token.token;
+        } else if (token.value) {
+          token = token.value;
+        } else {
+          // If we can't extract a string, stringify it
+          token = JSON.stringify(token);
+        }
+      }
 
       // Save user data and token
       const userData = {
@@ -78,6 +91,14 @@ const SignUpScreen = ({ navigation }) => {
       };
 
       await saveUserData(userData, token);
+
+      // Refetch fresh user data from server
+      try {
+        await refetchUserData();
+      } catch (error) {
+        console.log('Error refetching user data:', error);
+        // Continue even if refetch fails - we already have user data from signup response
+      }
 
       // Show success message and navigate
       Alert.alert(

@@ -12,6 +12,12 @@ import SellScreen from '../screens/SellScreen';
 import AddProductScreen from '../screens/AddProductScreen';
 import ProductDetailScreen from '../screens/ProductDetailScreen';
 import CartScreen from '../screens/CartScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
+import PrivacySecurityScreen from '../screens/PrivacySecurityScreen';
+import PaymentMethodsScreen from '../screens/PaymentMethodsScreen';
+import HelpSupportScreen from '../screens/HelpSupportScreen';
+import AboutScreen from '../screens/AboutScreen';
 
 const Stack = createStackNavigator();
 
@@ -50,6 +56,12 @@ const AppNavigator = () => {
         <Stack.Screen name="AddProduct" component={AddProductScreen} />
         <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
         <Stack.Screen name="Cart" component={CartScreen} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="Notifications" component={NotificationsScreen} />
+        <Stack.Screen name="PrivacySecurity" component={PrivacySecurityScreen} />
+        <Stack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
+        <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+        <Stack.Screen name="About" component={AboutScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

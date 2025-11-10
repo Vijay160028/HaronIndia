@@ -484,6 +484,39 @@ class AuthAPI {
       throw error;
     }
   }
+
+  /**
+   * Get current user profile
+   * @param {string} token - Auth token
+   * @returns {Promise<Object>} - Response data with user profile
+   */
+  static async getUserProfile(token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const error = new Error(data.message || 'Failed to fetch user profile');
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      if (error.message === 'Network request failed') {
+        throw new Error('Network error. Please check your internet connection.');
+      }
+      throw error;
+    }
+  }
 }
 
 export default AuthAPI;

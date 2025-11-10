@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import AuthAPI from '../services/api';
 
 const UserContext = createContext();
 
@@ -44,7 +45,9 @@ export const UserProvider = ({ children }) => {
       await AsyncStorage.setItem('userData', JSON.stringify(userData));
       await AsyncStorage.setItem('isLoggedIn', 'true');
       if (token) {
-        await AsyncStorage.setItem('authToken', token);
+        // Ensure token is a string before storing
+        const tokenString = typeof token === 'string' ? token : JSON.stringify(token);
+        await AsyncStorage.setItem('authToken', tokenString);
       }
       setUser(userData);
       setIsLoggedIn(true);
@@ -78,10 +81,69 @@ export const UserProvider = ({ children }) => {
   const getAuthToken = async () => {
     try {
       const token = await AsyncStorage.getItem('authToken');
-      return token;
+      if (!token) {
+        return null;
+      }
+      
+      // If token was stored as a JSON stringified object, try to parse it
+      // Otherwise return as is
+      try {
+        const parsed = JSON.parse(token);
+        // If parsing succeeds and it's an object, try to extract the token
+        if (typeof parsed === 'object' && parsed !== null) {
+          return parsed.token || parsed.value || token;
+        }
+        return token;
+      } catch {
+        // If parsing fails, it's already a string token, return as is
+        return token;
+      }
     } catch (error) {
       console.log('Error getting auth token:', error);
       return null;
+    }
+  };
+
+  const refetchUserData = async () => {
+    try {
+      const token = await getAuthToken();
+      if (!token) {
+        console.log('No auth token found');
+        return;
+      }
+
+      const response = await AuthAPI.getUserProfile(token);
+      
+      // Extract user data from response (handle different response formats)
+      const userData = response.data || response.user || response;
+      
+      // Get current user to preserve loginMethod
+      const currentUser = user;
+      
+      // Update user data in storage and state
+      const updatedUserData = {
+        userId: userData.userId || userData.id,
+        fullName: userData.fullName || userData.name,
+        email: userData.email,
+        phoneNumber: userData.phoneNumber || userData.phone,
+        userType: userData.userType,
+        profileImage: userData.profileImage || userData.avatar || null,
+        isEmailVerified: userData.isEmailVerified,
+        isPhoneVerified: userData.isPhoneVerified,
+        lastLoginAt: userData.lastLoginAt || new Date().toISOString(),
+        loginTime: new Date().toISOString(),
+        loginMethod: currentUser?.loginMethod || 'email',
+      };
+
+      await AsyncStorage.setItem('userData', JSON.stringify(updatedUserData));
+      setUser(updatedUserData);
+      
+      return updatedUserData;
+    } catch (error) {
+      console.log('Error refetching user data:', error);
+      // If refetch fails, don't clear existing user data
+      // Just log the error
+      throw error;
     }
   };
 
@@ -93,6 +155,7 @@ export const UserProvider = ({ children }) => {
     clearUserData,
     updateUserData,
     getAuthToken,
+    refetchUserData,
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

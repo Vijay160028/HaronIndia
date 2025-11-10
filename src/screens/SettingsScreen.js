@@ -31,12 +31,42 @@ const SettingsScreen = ({ navigation }) => {
   };
 
   const settingsItems = [
-    { icon: 'person-outline', title: 'Profile', subtitle: 'Manage your account' },
-    { icon: 'notifications-none', title: 'Notifications', subtitle: 'Configure alerts' },
-    { icon: 'lock-outline', title: 'Privacy & Security', subtitle: 'Account security' },
-    { icon: 'credit-card', title: 'Payment Methods', subtitle: 'Manage payments' },
-    { icon: 'help-outline', title: 'Help & Support', subtitle: 'Get assistance' },
-    { icon: 'info-outline', title: 'About', subtitle: 'App information' },
+    { 
+      icon: 'person-outline', 
+      title: 'Profile', 
+      subtitle: 'Manage your account',
+      screen: 'Profile'
+    },
+    { 
+      icon: 'notifications-none', 
+      title: 'Notifications', 
+      subtitle: 'Configure alerts',
+      screen: 'Notifications'
+    },
+    { 
+      icon: 'lock-outline', 
+      title: 'Privacy & Security', 
+      subtitle: 'Account security',
+      screen: 'PrivacySecurity'
+    },
+    { 
+      icon: 'credit-card', 
+      title: 'Payment Methods', 
+      subtitle: 'Manage payments',
+      screen: 'PaymentMethods'
+    },
+    { 
+      icon: 'help-outline', 
+      title: 'Help & Support', 
+      subtitle: 'Get assistance',
+      screen: 'HelpSupport'
+    },
+    { 
+      icon: 'info-outline', 
+      title: 'About', 
+      subtitle: 'App information',
+      screen: 'About'
+    },
   ];
 
   return (
@@ -49,7 +79,11 @@ const SettingsScreen = ({ navigation }) => {
 
         <View style={styles.settingsList}>
           {settingsItems.map((item, index) => (
-            <TouchableOpacity key={index} style={styles.settingItem}>
+            <TouchableOpacity 
+              key={index} 
+              style={styles.settingItem}
+              onPress={() => navigation.navigate(item.screen)}
+            >
               <View style={styles.settingIcon}>
                 <Icon name={item.icon} size={24} color={colors.primary} />
               </View>

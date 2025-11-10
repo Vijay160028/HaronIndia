@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } fr
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useCart } from '../context/CartContext';
+import { getImageSource } from '../utils/imageUtils';
 
 const CartScreen = ({ navigation }) => {
   const { cartItems, removeFromCart, updateQuantity, clearCart, getCartTotal, getCartItemCount } = useCart();
@@ -113,7 +114,7 @@ const CartScreen = ({ navigation }) => {
             {cartItems.map((item) => {
               const productId = item.id || item.productId || item._id;
               const productName = item.name || item.title || 'Product';
-              const productImage = item.image || item.imageUrl || item.thumbnail || 'https://via.placeholder.com/400';
+              const productImageUri = item.image || item.imageUrl || item.thumbnail || '';
               const productPrice = parsePrice(item.rentalPrice || item.price || item.pricePerUnit || 0);
               const productUnit = item.rentalUnit || item.unit || item.unitType || 'per unit';
               const quantity = item.quantity || 1;
@@ -122,7 +123,7 @@ const CartScreen = ({ navigation }) => {
               return (
                 <View key={productId} style={styles.cartItem}>
                   <Image 
-                    source={{ uri: productImage }} 
+                    source={getImageSource(productImageUri)} 
                     style={styles.itemImage}
                     resizeMode="cover"
                   />

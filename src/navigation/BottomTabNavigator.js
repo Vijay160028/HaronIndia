@@ -1,15 +1,19 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import HomeScreen from '../screens/HomeScreen';
 import OrdersScreen from '../screens/OrdersScreen';
 import ReelsScreen from '../screens/ReelsScreen';
+import CartScreen from '../screens/CartScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { colors } from '../constants/theme';
 
 const Tab = createBottomTabNavigator();
 
 const BottomTabNavigator = () => {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -17,13 +21,15 @@ const BottomTabNavigator = () => {
           let iconName;
 
           if (route.name === 'Home') {
-            iconName = focused ? 'home' : 'home';
+            iconName = 'home';
           } else if (route.name === 'Orders') {
-            iconName = focused ? 'shopping-cart' : 'shopping-cart';
+            iconName = 'receipt';
           } else if (route.name === 'Reels') {
-            iconName = focused ? 'video-library' : 'video-library';
+            iconName = 'video-library';
+          } else if (route.name === 'Cart') {
+            iconName = 'shopping-cart';
           } else if (route.name === 'Settings') {
-            iconName = focused ? 'settings' : 'settings';
+            iconName = 'settings';
           }
 
           return <Icon name={iconName} size={size} color={color} />;
@@ -34,9 +40,9 @@ const BottomTabNavigator = () => {
           backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
           borderTopColor: '#E0E0E0',
-          paddingBottom: 5,
+          paddingBottom: Math.max(insets.bottom, 5),
           paddingTop: 5,
-          height: 60,
+          height: 60 + Math.max(insets.bottom - 5, 0),
         },
         tabBarLabelStyle: {
           fontSize: 12,
@@ -64,6 +70,13 @@ const BottomTabNavigator = () => {
         component={ReelsScreen}
         options={{
           tabBarLabel: 'Reels',
+        }}
+      />
+      <Tab.Screen 
+        name="Cart" 
+        component={CartScreen}
+        options={{
+          tabBarLabel: 'Cart',
         }}
       />
       <Tab.Screen 

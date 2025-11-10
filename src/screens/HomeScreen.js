@@ -1,38 +1,295 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ImageBackground, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ImageBackground, Platform, PermissionsAndroid, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Geolocation from '@react-native-community/geolocation';
 import { useUser } from '../context/UserContext';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { colors, typography, spacing } from '../constants/theme';
+import { getUserAvatarSource } from '../utils/imageUtils';
 
 const HomeScreen = ({ navigation }) => {
-  const [location, setLocation] = useState('Jabalpur, MP');
-  const [weather, setWeather] = useState({ temp: '28°C', condition: 'Partly Cloudy' });
+  // All state hooks must be called first, in consistent order
+  const [location, setLocation] = useState('Detecting location...');
+  const [weather, setWeather] = useState({ temp: '--', condition: 'Loading...', icon: 'cloud' });
+  const [profileImageError, setProfileImageError] = useState(false);
+  
+  // Context hooks
   const { user } = useUser();
   const insets = useSafeAreaInsets();
 
+  // Reset profile image error when user changes
   useEffect(() => {
-    getCurrentLocation();
+    setProfileImageError(false);
+  }, [user?.profileImage]);
+
+  const fetchWeatherData = useCallback(async (latitude, longitude) => {
+    try {
+      // Using OpenWeatherMap API (free tier available)
+      // Note: You'll need to get a free API key from https://openweathermap.org/api
+      // For now, using a demo approach - replace with your API key
+      const API_KEY = 'YOUR_OPENWEATHERMAP_API_KEY'; // Replace with your API key
+      
+      // If no API key, use a fallback weather service or mock data
+      if (API_KEY === 'YOUR_OPENWEATHERMAP_API_KEY') {
+        // Fallback: Use a free weather API (Open-Meteo) that doesn't require API key
+        const response = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&timezone=auto`
+        );
+        
+        const data = await response.json();
+        
+        if (data && data.current) {
+          const temp = Math.round(data.current.temperature_2m);
+          const weatherCode = data.current.weather_code;
+          
+          // Map weather codes to conditions and icons
+          const weatherMap = {
+            0: { condition: 'Clear', icon: 'wb-sunny' },
+            1: { condition: 'Mainly Clear', icon: 'wb-sunny' },
+            2: { condition: 'Partly Cloudy', icon: 'cloud' },
+            3: { condition: 'Overcast', icon: 'cloud' },
+            45: { condition: 'Foggy', icon: 'cloud' },
+            48: { condition: 'Foggy', icon: 'cloud' },
+            51: { condition: 'Light Drizzle', icon: 'opacity' },
+            53: { condition: 'Drizzle', icon: 'opacity' },
+            55: { condition: 'Heavy Drizzle', icon: 'opacity' },
+            61: { condition: 'Light Rain', icon: 'opacity' },
+            63: { condition: 'Rain', icon: 'opacity' },
+            65: { condition: 'Heavy Rain', icon: 'opacity' },
+            71: { condition: 'Light Snow', icon: 'ac-unit' },
+            73: { condition: 'Snow', icon: 'ac-unit' },
+            75: { condition: 'Heavy Snow', icon: 'ac-unit' },
+            80: { condition: 'Light Rain', icon: 'opacity' },
+            81: { condition: 'Rain', icon: 'opacity' },
+            82: { condition: 'Heavy Rain', icon: 'opacity' },
+            85: { condition: 'Snow', icon: 'ac-unit' },
+            86: { condition: 'Heavy Snow', icon: 'ac-unit' },
+            95: { condition: 'Thunderstorm', icon: 'flash-on' },
+            96: { condition: 'Thunderstorm', icon: 'flash-on' },
+            99: { condition: 'Thunderstorm', icon: 'flash-on' },
+          };
+          
+          const weatherInfo = weatherMap[weatherCode] || { condition: 'Unknown', icon: 'cloud' };
+          
+          setWeather({
+            temp: `${temp}°C`,
+            condition: weatherInfo.condition,
+            icon: weatherInfo.icon,
+          });
+        }
+      } else {
+        // Using OpenWeatherMap API (if you have an API key)
+        const response = await fetch(
+          `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${API_KEY}&units=metric`
+        );
+        
+        const data = await response.json();
+        
+        if (data && data.main && data.weather && data.weather[0]) {
+          const temp = Math.round(data.main.temp);
+          const condition = data.weather[0].main;
+          const description = data.weather[0].description;
+          
+          // Map OpenWeatherMap conditions to icons (using MaterialIcons)
+          const iconMap = {
+            'Clear': 'wb-sunny',
+            'Clouds': 'cloud',
+            'Rain': 'opacity',
+            'Drizzle': 'opacity',
+            'Thunderstorm': 'flash-on',
+            'Snow': 'ac-unit',
+            'Mist': 'cloud',
+            'Fog': 'cloud',
+            'Haze': 'cloud',
+          };
+          
+          setWeather({
+            temp: `${temp}°C`,
+            condition: description.charAt(0).toUpperCase() + description.slice(1),
+            icon: iconMap[condition] || 'cloud',
+          });
+        }
+      }
+    } catch (error) {
+      console.log('Weather fetch error:', error);
+      // Set default weather on error
+      setWeather({
+        temp: '--',
+        condition: 'Unable to fetch',
+        icon: 'cloud',
+      });
+    }
   }, []);
 
-  const getCurrentLocation = () => {
+  const getCurrentLocation = useCallback(() => {
+    const reverseGeocode = async (latitude, longitude) => {
+      try {
+        // Using OpenStreetMap Nominatim API (free, no API key required)
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`,
+          {
+            headers: {
+              'User-Agent': 'HaronIndia/1.0', // Required by Nominatim
+            },
+          }
+        );
+        
+        const data = await response.json();
+        
+        if (data && data.address) {
+          const address = data.address;
+          // Format location as "City, State" or "City, Country"
+          let locationName = '';
+          
+          if (address.city || address.town || address.village) {
+            locationName = address.city || address.town || address.village;
+          } else if (address.suburb || address.county) {
+            locationName = address.suburb || address.county;
+          } else if (address.state_district) {
+            locationName = address.state_district;
+          }
+          
+          if (address.state) {
+            locationName = locationName ? `${locationName}, ${address.state}` : address.state;
+          } else if (address.country) {
+            locationName = locationName ? `${locationName}, ${address.country}` : address.country;
+          }
+          
+          if (locationName) {
+            setLocation(locationName);
+          } else {
+            // Fallback to display name if structured address is not available
+            setLocation(data.display_name?.split(',')[0] || 'Unknown location');
+          }
+        } else {
+          setLocation('Unknown location');
+        }
+      } catch (error) {
+        console.log('Reverse geocoding error:', error);
+        setLocation('Location unavailable');
+      }
+    };
+
     Geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        // You can use reverse geocoding here to get city name
-        // For now, we'll use a default location
-        setLocation('Jabalpur, MP');
+        // Use reverse geocoding to get city name from coordinates
+        reverseGeocode(latitude, longitude);
+        // Fetch weather data based on coordinates
+        fetchWeatherData(latitude, longitude);
       },
       (error) => {
         console.log('Location error:', error);
-        // Use default location if permission denied
-        setLocation('Jabalpur, MP');
+        // Handle different error codes
+        if (error.code === 1) {
+          // Permission denied
+          setLocation('Location permission denied');
+          if (Platform.OS === 'ios') {
+            Alert.alert(
+              'Location Permission Required',
+              'Please enable location access in Settings to see your current location.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Open Settings', onPress: () => {
+                  // On iOS, user needs to manually go to Settings
+                  setLocation('Please enable location in Settings');
+                }},
+              ]
+            );
+          }
+        } else if (error.code === 2) {
+          // Position unavailable
+          setLocation('Location unavailable');
+        } else if (error.code === 3) {
+          // Timeout
+          setLocation('Location request timeout');
+        } else {
+          setLocation('Unable to detect location');
+        }
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
     );
-  };
+  }, [fetchWeatherData]);
+
+  const requestLocationPermission = useCallback(async () => {
+    if (Platform.OS === 'android') {
+      try {
+        // Check if permission is already granted
+        const checkResult = await PermissionsAndroid.check(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+        );
+        
+        if (checkResult) {
+          console.log('Location permission already granted');
+          return true;
+        }
+
+        // Request permission
+        console.log('Requesting location permission...');
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          {
+            title: 'Location Permission',
+            message: 'Haron India needs access to your location to show your current city and provide location-based services.',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          }
+        );
+        
+        console.log('Permission result:', granted);
+        
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+          console.log('Location permission granted');
+          return true;
+        } else if (granted === PermissionsAndroid.RESULTS.DENIED) {
+          setLocation('Location permission denied');
+          return false;
+        } else if (granted === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+          setLocation('Location permission permanently denied. Please enable in Settings');
+          Alert.alert(
+            'Permission Required',
+            'Location permission has been permanently denied. Please enable it in Settings > Apps > Haron India > Permissions > Location.',
+            [{ text: 'OK' }]
+          );
+          return false;
+        } else {
+          setLocation('Location permission not granted');
+          return false;
+        }
+      } catch (err) {
+        console.error('Permission request error:', err);
+        setLocation('Permission request failed: ' + err.message);
+        return false;
+      }
+    } else {
+      // iOS permissions are requested automatically when Geolocation.getCurrentPosition is called
+      // But we can check if permission was previously denied
+      return true;
+    }
+  }, []);
+
+  useEffect(() => {
+    const initializeLocation = async () => {
+      console.log('Initializing location...');
+      // Request permission first
+      const permissionGranted = await requestLocationPermission();
+      console.log('Permission granted:', permissionGranted);
+      if (permissionGranted) {
+        // Get location after permission is granted
+        getCurrentLocation();
+      } else {
+        console.log('Permission not granted, location will not be fetched');
+      }
+    };
+    
+    // Small delay to ensure screen is mounted
+    const timer = setTimeout(() => {
+      initializeLocation();
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [getCurrentLocation, requestLocationPermission]);
 
   const actionCards = [
     {
@@ -54,7 +311,7 @@ const HomeScreen = ({ navigation }) => {
     {
       id: 3,
       title: 'Sell',
-      subtitle: 'Produce',
+      subtitle: 'Products',
       icon: 'local-offer',
       iconFamily: 'MaterialIcons',
       onPress: () => navigation.navigate('Sell'),
@@ -97,27 +354,53 @@ const HomeScreen = ({ navigation }) => {
               style={styles.logoImage}
               resizeMode="contain"
             />
-            <View style={styles.logoTextContainer}>
+            {/* <View style={styles.logoTextContainer}>
               <Text style={styles.appName}>Farm Connect</Text>
               <Text style={styles.appSubtitle}>Farm Portal</Text>
-            </View>
+            </View> */}
           </View>
           <View style={styles.profileContainer}>
+            {user?.profileImage && 
+             user.profileImage.trim() !== '' && 
+             user.profileImage !== 'null' && 
+             user.profileImage !== 'undefined' &&
+             !profileImageError ? (
             <Image 
-              source={{ uri: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face' }}
+                source={getUserAvatarSource(user.profileImage)}
               style={styles.profileImage}
-            />
+                onError={() => {
+                  // If image fails to load, show default avatar with initials
+                  setProfileImageError(true);
+                }}
+              />
+            ) : (
+              <View style={styles.defaultAvatar}>
+                <Text style={styles.defaultAvatarText}>
+                  {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
-            <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: 300 + insets.bottom }]}>
+            <ScrollView 
+              contentContainerStyle={[styles.scrollContent, { paddingBottom: 80 + insets.bottom }]}
+              showsVerticalScrollIndicator={false}
+            >
 
           {/* Welcome Card */}
           <View style={styles.welcomeCard}>
-            <Text style={styles.welcomeText}>Welcome back, Ravi</Text>
+            <Text style={styles.welcomeText}>
+              Welcome back, {user?.fullName ? user.fullName.split(' ')[0] : 'User'}
+            </Text>
+            <View style={styles.locationContainer}>
+              <View style={styles.locationTextContainer}>
+                <Icon name="location-on" size={16} color="#2E7D32" style={styles.locationIcon} />
             <Text style={styles.locationText}>{location}</Text>
+              </View>
+            </View>
             <View style={styles.weatherBadge}>
-              <Icon name="cloud" size={14} color="#1B5E20" style={{ marginRight: 4 }} />
+              <Icon name={weather.icon} size={14} color="#1B5E20" style={styles.weatherIcon} />
               <Text style={styles.weatherTemp}>{weather.temp}</Text>
               <Text style={styles.weatherDot}>•</Text>
               <Text style={styles.weatherCondition}>{weather.condition}</Text>
@@ -127,16 +410,25 @@ const HomeScreen = ({ navigation }) => {
           {/* Action Cards */}
           <View style={styles.actionCardsContainer}>
             {actionCards.map((card) => (
-              <TouchableOpacity key={card.id} style={styles.actionCard} onPress={card.onPress}>
+              <TouchableOpacity 
+                key={card.id} 
+                style={styles.actionCard} 
+                onPress={card.onPress}
+                activeOpacity={0.7}
+              >
                 <View style={styles.actionCardIcon}>
                   {card.iconFamily === 'MaterialIcons' ? (
-                    <Icon name={card.icon} size={24} color="#2E7D32" />
+                    <Icon name={card.icon} size={28} color="#2E7D32" />
                   ) : (
-                    <MaterialCommunityIcons name={card.icon} size={24} color="#2E7D32" />
+                    <MaterialCommunityIcons name={card.icon} size={28} color="#2E7D32" />
                   )}
                 </View>
-                <Text style={styles.actionCardTitle}>{card.title}</Text>
-                <Text style={styles.actionCardSubtitle}>{card.subtitle}</Text>
+                <Text style={styles.actionCardTitle} numberOfLines={1} adjustsFontSizeToFit>
+                  {card.title}
+                </Text>
+                <Text style={styles.actionCardSubtitle} numberOfLines={2} adjustsFontSizeToFit>
+                  {card.subtitle}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -147,7 +439,7 @@ const HomeScreen = ({ navigation }) => {
                 {activeListings.map((listing, index) => (
                   <View key={listing.id} style={[
                     styles.listingCard,
-                    index === activeListings.length - 1 && [styles.lastListingCard, { marginBottom: 150 + insets.bottom }]
+                    index === activeListings.length - 1 && styles.lastListingCard
                   ]}>
                 <View style={styles.listingHeader}>
                   <Text style={styles.listingTitle}>{listing.title}</Text>
@@ -159,7 +451,7 @@ const HomeScreen = ({ navigation }) => {
                 <View style={styles.listingDetails}>
                   <Text style={styles.listingDetail}>Quantity: {listing.quantity}</Text>
                   <View style={styles.dateContainer}>
-                    <Icon name="event" size={12} color="#666666" style={{ marginRight: 4 }} />
+                    <Icon name="event" size={12} color="#666666" style={styles.dateIcon} />
                     <Text style={styles.listingDate}>{listing.date}</Text>
                   </View>
                 </View>
@@ -193,7 +485,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 300,
+    paddingBottom: 80,
   },
   header: {
     flexDirection: 'row',
@@ -210,9 +502,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoImage: {
-    width: 40,
-    height: 40,
-    marginRight: 12,
+    width: 70,
+    height: 70,
+    margin: 'auto',
   },
   logoTextContainer: {
     flexDirection: 'column',
@@ -237,6 +529,21 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#2E7D32',
   },
+  defaultAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#2E7D32',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#2E7D32',
+  },
+  defaultAvatarText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
   welcomeCard: {
     backgroundColor: '#E8F5E8',
     borderRadius: 16,
@@ -255,10 +562,40 @@ const styles = StyleSheet.create({
     color: '#1B5E20',
     marginBottom: 8,
   },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 12,
+  },
+  locationTextContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  locationIcon: {
+    marginRight: 6,
+  },
   locationText: {
     fontSize: 16,
     color: '#2E7D32',
-    marginBottom: 12,
+    flex: 1,
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E8',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginLeft: 8,
+  },
+  retryButtonText: {
+    fontSize: 12,
+    color: '#2E7D32',
+    fontWeight: '600',
+    marginLeft: 4,
   },
   weatherBadge: {
     flexDirection: 'row',
@@ -268,6 +605,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     alignSelf: 'flex-start',
+  },
+  weatherIcon: {
+    marginRight: 4,
   },
   weatherTemp: {
     fontSize: 14,
@@ -287,39 +627,48 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 32,
+    paddingHorizontal: 0,
   },
   actionCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 20,
+    padding: 18,
     alignItems: 'center',
     flex: 1,
-    marginHorizontal: 4,
+    marginHorizontal: 6,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    minHeight: 120,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 4,
+    minHeight: 140,
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
   },
   actionCardIcon: {
-    width: 48,
-    height: 48,
+    width: 56,
+    height: 56,
     backgroundColor: '#E8F5E8',
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 14,
   },
   actionCardTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 4,
+    color: '#1B5E20',
+    marginBottom: 6,
+    textAlign: 'center',
+    minHeight: 24,
   },
   actionCardSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#666666',
+    textAlign: 'center',
+    lineHeight: 18,
+    minHeight: 36,
   },
   activeSection: {
     marginBottom: 20,
@@ -384,6 +733,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  dateIcon: {
+    marginRight: 4,
+  },
   listingDate: {
     fontSize: 14,
     color: '#666666',
@@ -407,7 +759,7 @@ const styles = StyleSheet.create({
     color: '#666666',
   },
   lastListingCard: {
-    marginBottom: 150,
+    marginBottom: 0,
   },
 });
 

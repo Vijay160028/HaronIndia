@@ -5,6 +5,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AuthAPI from '../services/api';
 import { useCart } from '../context/CartContext';
+import { getImageSource } from '../utils/imageUtils';
 
 const ProductDetailScreen = ({ navigation, route }) => {
   const { productId, isRental } = route.params || {};
@@ -126,7 +127,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
 
   const productName = product.name || product.title || 'Product';
   const productDescription = product.description || product.desc || product.details || 'No description available';
-  const productImage = product.image || product.imageUrl || product.thumbnail || 'https://via.placeholder.com/400';
+  const productImageUri = product.image || product.imageUrl || product.thumbnail || '';
   const productPrice = isRental 
     ? (product.rentalPrice || product.price || product.pricePerUnit || '0')
     : (product.price || product.pricePerUnit || '0');
@@ -167,7 +168,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
         {/* Product Image */}
         <View style={styles.imageContainer}>
           <Image 
-            source={{ uri: productImage }} 
+            source={getImageSource(productImageUri)} 
             style={styles.productImage}
             resizeMode="cover"
           />

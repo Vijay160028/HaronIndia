@@ -5,6 +5,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AuthAPI from '../services/api';
 import { useUser } from '../context/UserContext';
+import { getImageSource } from '../utils/imageUtils';
 
 const SellScreen = ({ navigation }) => {
   const [myProducts, setMyProducts] = useState([]);
@@ -61,7 +62,7 @@ const SellScreen = ({ navigation }) => {
   const renderProduct = ({ item }) => {
     const productId = item.id || item.productId || item._id;
     const productName = item.name || item.title || 'Product';
-    const productImage = item.image || item.imageUrl || item.thumbnail || 'https://via.placeholder.com/400';
+    const productImageUri = item.image || item.imageUrl || item.thumbnail || '';
     const productPrice = item.price || item.pricePerUnit || '0';
     const productUnit = item.unit || item.unitType || 'per unit';
     const quantity = item.quantity || item.stock || '0';
@@ -74,7 +75,7 @@ const SellScreen = ({ navigation }) => {
         onPress={() => navigation.navigate('ProductDetail', { productId, isMyProduct: true })}
       >
         <Image 
-          source={{ uri: productImage }} 
+          source={getImageSource(productImageUri)} 
           style={styles.productImage}
           resizeMode="cover"
         />

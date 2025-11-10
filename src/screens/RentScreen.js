@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, FlatList, ActivityIndicator, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AuthAPI from '../services/api';
 import { useCart } from '../context/CartContext';
+import { getImageSource } from '../utils/imageUtils';
 
 // Dummy farming equipment data
 const dummyEquipment = [
@@ -160,6 +161,7 @@ const RentScreen = ({ navigation }) => {
   const [equipment, setEquipment] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const { getCartItemCount } = useCart();
 
   const fetchEquipment = useCallback(async () => {
@@ -194,11 +196,11 @@ const RentScreen = ({ navigation }) => {
   const categories = [
     { id: 'all', name: 'All', icon: 'apps' },
     { id: 'tractor', name: 'Tractors', icon: 'tractor' },
-    { id: 'harvester', name: 'Harvesters', icon: 'combine-harvester' },
-    { id: 'plow', name: 'Plows & Tillers', icon: 'plow' },
+    { id: 'harvester', name: 'Harvesters', icon: 'wheat' },
+    { id: 'plow', name: 'Plows & Tillers', icon: 'shovel' },
     { id: 'irrigation', name: 'Irrigation', icon: 'water-pump' },
     { id: 'sprayer', name: 'Sprayers', icon: 'spray' },
-    { id: 'cultivator', name: 'Cultivators', icon: 'hoe' },
+    { id: 'cultivator', name: 'Cultivators', icon: 'rake' },
     { id: 'other', name: 'Other', icon: 'tools' },
   ];
 
@@ -217,7 +219,7 @@ const RentScreen = ({ navigation }) => {
     const equipmentId = item.id || item.productId || item._id;
     const equipmentName = item.name || item.title || 'Equipment';
     const equipmentDescription = item.description || item.desc || '';
-    const equipmentImage = item.image || item.imageUrl || item.thumbnail || 'https://via.placeholder.com/400';
+    const equipmentImageUri = item.image || item.imageUrl || item.thumbnail || '';
     const rentalPrice = item.rentalPrice || item.price || item.pricePerUnit || '0';
     const rentalUnit = item.rentalUnit || item.unit || 'per day';
     const equipmentRating = item.rating || item.averageRating || 0;
@@ -231,7 +233,7 @@ const RentScreen = ({ navigation }) => {
         onPress={() => navigation.navigate('ProductDetail', { productId: equipmentId, isRental: true })}
       >
         <Image 
-          source={{ uri: equipmentImage }} 
+          source={getImageSource(equipmentImageUri)} 
           style={styles.equipmentImage}
           resizeMode="cover"
         />
@@ -326,38 +328,86 @@ const RentScreen = ({ navigation }) => {
           )}
         </View>
 
-        {/* Categories */}
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          style={styles.categoriesContainer}
-          contentContainerStyle={styles.categoriesContent}
-        >
-          {categories.map((category) => (
-            <TouchableOpacity
-              key={category.id}
-              style={[
-                styles.categoryChip,
-                selectedCategory === category.id && styles.categoryChipActive
-              ]}
-              onPress={() => setSelectedCategory(category.id)}
-            >
-              <MaterialCommunityIcons 
-                name={category.icon} 
-                size={20} 
-                color={selectedCategory === category.id ? '#FFFFFF' : '#2E7D32'} 
-              />
-              <Text
-                style={[
-                  styles.categoryText,
-                  selectedCategory === category.id && styles.categoryTextActive
-                ]}
-              >
-                {category.name}
+        {/* Category Dropdown */}
+        <View style={styles.categoryDropdownContainer}>
+          <View style={styles.filterLabelContainer}>
+            <Icon name="filter-list" size={18} color="#2E7D32" style={styles.filterIcon} />
+            <Text style={styles.filterLabel}>Filter by Category</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.categoryDropdown}
+            onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}
+          >
+            <View style={styles.categoryDropdownContent}>
+              <View style={styles.categoryIconContainer}>
+                <MaterialCommunityIcons 
+                  name={categories.find(c => c.id === selectedCategory)?.icon || 'apps'} 
+                  size={22} 
+                  color="#2E7D32" 
+                />
+              </View>
+              <Text style={styles.categoryDropdownText}>
+                {categories.find(c => c.id === selectedCategory)?.name || 'All Categories'}
               </Text>
+            </View>
+            <Icon 
+              name={showCategoryDropdown ? 'keyboard-arrow-up' : 'keyboard-arrow-down'} 
+              size={24} 
+              color="#666666" 
+            />
+          </TouchableOpacity>
+
+          <Modal
+            visible={showCategoryDropdown}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setShowCategoryDropdown(false)}
+          >
+            <TouchableOpacity
+              style={styles.modalOverlay}
+              activeOpacity={1}
+              onPress={() => setShowCategoryDropdown(false)}
+            >
+              <View style={styles.dropdownMenu}>
+                {categories.map((category) => (
+                  <TouchableOpacity
+                    key={category.id}
+                    style={[
+                      styles.dropdownItem,
+                      selectedCategory === category.id && styles.dropdownItemActive
+                    ]}
+                    onPress={() => {
+                      setSelectedCategory(category.id);
+                      setShowCategoryDropdown(false);
+                    }}
+                  >
+                    <View style={[
+                      styles.dropdownItemIconContainer,
+                      selectedCategory === category.id && styles.dropdownItemIconContainerActive
+                    ]}>
+                      <MaterialCommunityIcons 
+                        name={category.icon} 
+                        size={20} 
+                        color={selectedCategory === category.id ? '#FFFFFF' : '#2E7D32'} 
+                      />
+                    </View>
+                    <Text
+                      style={[
+                        styles.dropdownItemText,
+                        selectedCategory === category.id && styles.dropdownItemTextActive
+                      ]}
+                    >
+                      {category.name}
+                    </Text>
+                    {selectedCategory === category.id && (
+                      <Icon name="check" size={20} color="#FFFFFF" />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
+          </Modal>
+        </View>
 
         {/* Equipment List */}
         <View style={styles.equipmentSection}>
@@ -469,34 +519,103 @@ const styles = StyleSheet.create({
     color: '#333333',
     paddingVertical: 0,
   },
-  categoriesContainer: {
+  categoryDropdownContainer: {
+    marginHorizontal: 20,
     marginBottom: 20,
   },
-  categoriesContent: {
-    paddingHorizontal: 20,
-  },
-  categoryChip: {
+  filterLabelContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 8,
+  },
+  filterIcon: {
+    marginRight: 6,
+  },
+  filterLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1B5E20',
+  },
+  categoryDropdown: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginRight: 10,
+    paddingVertical: 14,
+    borderRadius: 12,
     borderWidth: 1.5,
     borderColor: '#2E7D32',
   },
-  categoryChipActive: {
+  categoryDropdownContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  categoryIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: '#E8F5E8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  categoryDropdownText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1B5E20',
+    flex: 1,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-start',
+    paddingTop: 100,
+  },
+  dropdownMenu: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 20,
+    borderRadius: 12,
+    paddingVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  dropdownItemActive: {
     backgroundColor: '#2E7D32',
   },
-  categoryText: {
-    marginLeft: 6,
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#2E7D32',
+  dropdownItemIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#E8F5E8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
   },
-  categoryTextActive: {
+  dropdownItemIconContainerActive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  dropdownItemText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333333',
+  },
+  dropdownItemTextActive: {
     color: '#FFFFFF',
+    fontWeight: '600',
   },
   equipmentSection: {
     paddingHorizontal: 20,
