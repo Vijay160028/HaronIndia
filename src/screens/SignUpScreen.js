@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, TextInput, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import Button from '../components/Button';
@@ -9,6 +9,8 @@ import AuthAPI from '../services/api';
 import { useUser } from '../context/UserContext';
 
 const SignUpScreen = ({ navigation }) => {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -18,7 +20,7 @@ const SignUpScreen = ({ navigation }) => {
 
   const handleSignUp = async () => {
     // Client-side validation
-    if (!email || !password || !confirmPassword) {
+    if (!firstName || !lastName || !email || !password || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
@@ -50,6 +52,8 @@ const SignUpScreen = ({ navigation }) => {
     try {
       // Call signup API
       const response = await AuthAPI.signup({
+        firstName,
+        lastName,
         email,
         password,
         termsAccepted,
@@ -160,13 +164,13 @@ const SignUpScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.card}>
+      <View style={styles.card}>
           <View style={styles.header}>
+            <Image 
+              source={require('../assets/images/app_logo.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
             <View style={styles.stepBadge}>
               <Text style={styles.stepText}>Step 1 of 2</Text>
             </View>
@@ -175,6 +179,36 @@ const SignUpScreen = ({ navigation }) => {
           </View>
 
           <View style={styles.form}>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>First Name *</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.inputText}
+                  value={firstName}
+                  onChangeText={setFirstName}
+                  placeholder="Enter your first name"
+                  placeholderTextColor="#999999"
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Last Name *</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.inputText}
+                  value={lastName}
+                  onChangeText={setLastName}
+                  placeholder="Enter your last name"
+                  placeholderTextColor="#999999"
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                />
+              </View>
+            </View>
+
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Email Address *</Text>
               <View style={styles.inputWrapper}>
@@ -264,7 +298,6 @@ const SignUpScreen = ({ navigation }) => {
               </TouchableOpacity>
           </View>
         </View>
-      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -273,17 +306,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingVertical: 40,
     justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 20,
   },
   card: {
     backgroundColor: '#F0F8E8',
     borderRadius: 20,
-    padding: 30,
+    padding: 20,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -295,14 +325,19 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 15,
+  },
+  logo: {
+    width: 80,
+    height: 80,
+    marginBottom: 10,
   },
   stepBadge: {
     backgroundColor: '#E8F5E8',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 15,
-    marginBottom: 15,
+    marginBottom: 8,
   },
   stepText: {
     fontSize: 12,
@@ -310,22 +345,23 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#1B5E20',
-    marginBottom: 8,
+    marginBottom: 4,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#666666',
     textAlign: 'center',
+    marginBottom: 10,
   },
   form: {
-    marginBottom: 20,
+    marginBottom: 15,
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: 12,
   },
   label: {
     fontSize: 14,
@@ -339,7 +375,7 @@ const styles = StyleSheet.create({
     borderColor: '#E0E0E0',
     borderRadius: 8,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
     position: 'relative',
   },
   inputText: {
@@ -351,9 +387,9 @@ const styles = StyleSheet.create({
   signUpButton: {
     backgroundColor: '#2E7D32',
     borderRadius: 8,
-    paddingVertical: 14,
+    paddingVertical: 12,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 8,
   },
   signUpButtonDisabled: {
     opacity: 0.7,
@@ -376,7 +412,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 20,
+    marginTop: 15,
   },
   footerText: {
     fontSize: 16,
@@ -390,8 +426,8 @@ const styles = StyleSheet.create({
   checkboxContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
-    marginBottom: 20,
+    marginTop: 8,
+    marginBottom: 15,
   },
   checkbox: {
     marginRight: 10,

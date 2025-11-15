@@ -18,8 +18,8 @@ class AuthAPI {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          fullName: userData.fullName,
-          phoneNumber: userData.phoneNumber,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
           email: userData.email,
           password: userData.password,
           confirmPassword: userData.confirmPassword,
