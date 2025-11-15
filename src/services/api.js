@@ -517,6 +517,182 @@ class AuthAPI {
       throw error;
     }
   }
+
+  /**
+   * Create a new order
+   * @param {Object} orderData - Order data
+   * @param {string} token - Auth token
+   * @returns {Promise<Object>} - Response data
+   */
+  static async createOrder(orderData, token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const error = new Error(data.message || 'Failed to create order');
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      if (error.message === 'Network request failed') {
+        throw new Error('Network error. Please check your internet connection.');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Get all orders for the current user
+   * @param {string} token - Auth token
+   * @returns {Promise<Object>} - Response data with orders array
+   */
+  static async getOrders(token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/orders`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const error = new Error(data.message || 'Failed to fetch orders');
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      if (error.message === 'Network request failed') {
+        throw new Error('Network error. Please check your internet connection.');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Get order by ID
+   * @param {string} orderId - Order ID
+   * @param {string} token - Auth token
+   * @returns {Promise<Object>} - Response data with order details
+   */
+  static async getOrderById(orderId, token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const error = new Error(data.message || 'Failed to fetch order');
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      if (error.message === 'Network request failed') {
+        throw new Error('Network error. Please check your internet connection.');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Update user profile
+   * @param {Object} profileData - Profile data to update
+   * @param {string} token - Auth token
+   * @returns {Promise<Object>} - Response data
+   */
+  static async updateProfile(profileData, token) {
+    try {
+      const response = await fetch('https://us-central1-fir-ac00e.cloudfunctions.net/api/api/auth/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        body: JSON.stringify(profileData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const error = new Error(data.message || 'Failed to update profile');
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      if (error.message === 'Network request failed') {
+        throw new Error('Network error. Please check your internet connection.');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Submit loan/KCC request
+   * @param {Object} financeData - Finance request data
+   * @param {string} token - Auth token
+   * @returns {Promise<Object>} - Response data
+   */
+  static async submitLoanRequest(financeData, token) {
+    try {
+      const requestBody = {
+        requestType: financeData.requestType,
+      };
+
+      const response = await fetch(`${API_BASE_URL}/api/loan-request`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const error = new Error(data.message || 'Failed to submit finance request');
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      if (error.message === 'Network request failed') {
+        throw new Error('Network error. Please check your internet connection.');
+      }
+      throw error;
+    }
+  }
 }
 
 export default AuthAPI;

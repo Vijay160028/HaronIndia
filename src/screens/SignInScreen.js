@@ -41,20 +41,39 @@ const SignInScreen = ({ navigation }) => {
         password,
       });
 
-      // Extract token from response (handle different response formats)
-      let token = response.token || response.data?.token || response.authtoken || response.authToken || null;
+      // Extract JWT token from response (handle different response formats)
+      let token = 
+        response.token || 
+        response.data?.token || 
+        response.jwt || 
+        response.data?.jwt ||
+        response.jwtToken ||
+        response.data?.jwtToken ||
+        response.authtoken || 
+        response.authToken ||
+        response.data?.authToken ||
+        response.accessToken ||
+        response.data?.accessToken ||
+        null;
       
       // Ensure token is a string (not an object)
       if (token && typeof token !== 'string') {
         // If token is an object, try to extract the actual token string
         if (token.token) {
           token = token.token;
+        } else if (token.jwt) {
+          token = token.jwt;
         } else if (token.value) {
           token = token.value;
         } else {
           // If we can't extract a string, stringify it
           token = JSON.stringify(token);
         }
+      }
+
+      // Validate that we have a token
+      if (!token) {
+        throw new Error('No authentication token received from server');
       }
 
       // Save initial user data and token
@@ -112,9 +131,6 @@ const SignInScreen = ({ navigation }) => {
     }
   };
 
-  const handlePhoneSignIn = () => {
-    navigation.navigate('PhoneVerification');
-  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -172,16 +188,6 @@ const SignInScreen = ({ navigation }) => {
             ) : (
               <Text style={styles.signInButtonText}>Sign In</Text>
             )}
-          </TouchableOpacity>
-
-          <View style={styles.separator}>
-            <View style={styles.separatorLine} />
-            <Text style={styles.separatorText}>Or</Text>
-            <View style={styles.separatorLine} />
-          </View>
-
-          <TouchableOpacity style={styles.phoneButton} onPress={handlePhoneSignIn}>
-            <Text style={styles.phoneButtonText}>Continue with Phone number</Text>
           </TouchableOpacity>
         </View>
 
@@ -295,34 +301,6 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginLeft: 8,
-  },
-  separator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  separatorLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E0E0E0',
-  },
-  separatorText: {
-    marginHorizontal: 15,
-    color: '#999999',
-    fontSize: 14,
-  },
-  phoneButton: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  phoneButtonText: {
-    color: '#2E7D32',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   footer: {
     display: 'flex',

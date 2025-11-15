@@ -18,6 +18,12 @@ import PrivacySecurityScreen from '../screens/PrivacySecurityScreen';
 import PaymentMethodsScreen from '../screens/PaymentMethodsScreen';
 import HelpSupportScreen from '../screens/HelpSupportScreen';
 import AboutScreen from '../screens/AboutScreen';
+import ContactScreen from '../screens/ContactScreen';
+import WeatherScreen from '../screens/WeatherScreen';
+import ChatbotScreen from '../screens/ChatbotScreen';
+import ComplaintScreen from '../screens/ComplaintScreen';
+import RentOutFormScreen from '../screens/RentOutFormScreen';
+import FinanceScreen from '../screens/FinanceScreen';
 
 const Stack = createStackNavigator();
 
@@ -62,6 +68,12 @@ const AppNavigator = () => {
         <Stack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
         <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
         <Stack.Screen name="About" component={AboutScreen} />
+        <Stack.Screen name="Contact" component={ContactScreen} />
+        <Stack.Screen name="Weather" component={WeatherScreen} />
+        <Stack.Screen name="Finance" component={FinanceScreen} />
+        <Stack.Screen name="Chatbot" component={ChatbotScreen} />
+        <Stack.Screen name="Complaint" component={ComplaintScreen} />
+        <Stack.Screen name="RentOutForm" component={RentOutFormScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

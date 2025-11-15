@@ -1,17 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ImageBackground, Platform, PermissionsAndroid, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ImageBackground, Platform, PermissionsAndroid, Alert, Modal } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Geolocation from '@react-native-community/geolocation';
 import { useUser } from '../context/UserContext';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { getUserAvatarSource } from '../utils/imageUtils';
+import { isProfileComplete, getMissingProfileFields } from '../utils/profileUtils';
 
 const HomeScreen = ({ navigation }) => {
   // All state hooks must be called first, in consistent order
   const [location, setLocation] = useState('Detecting location...');
   const [weather, setWeather] = useState({ temp: '--', condition: 'Loading...', icon: 'cloud' });
   const [profileImageError, setProfileImageError] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   
   // Context hooks
   const { user } = useUser();
@@ -21,6 +23,15 @@ const HomeScreen = ({ navigation }) => {
   useEffect(() => {
     setProfileImageError(false);
   }, [user?.profileImage]);
+
+  // Show profile completion modal if profile is incomplete
+  useEffect(() => {
+    if (user && !isProfileComplete(user)) {
+      setShowProfileModal(true);
+    } else {
+      setShowProfileModal(false);
+    }
+  }, [user]);
 
   const fetchWeatherData = useCallback(async (latitude, longitude) => {
     try {
@@ -291,30 +302,123 @@ const HomeScreen = ({ navigation }) => {
     return () => clearTimeout(timer);
   }, [getCurrentLocation, requestLocationPermission]);
 
+  const handleActionPress = (screenName) => {
+    if (!isProfileComplete(user)) {
+      Alert.alert(
+        'Profile Incomplete',
+        'Please complete your profile to access this feature. You need to add: Mobile Number, PIN Code, Village, City, State, Bank Account, Bank Address, IFSC Code, and Kisan Card Number.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Complete Profile', 
+            onPress: () => navigation.navigate('Profile')
+          },
+        ]
+      );
+      return;
+    }
+    navigation.navigate(screenName);
+  };
+
   const actionCards = [
     {
       id: 1,
+      title: 'Sell',
+      subtitle: 'Sell Products',
+      icon: 'local-offer',
+      iconFamily: 'MaterialIcons',
+      onPress: () => handleActionPress('Sell'),
+    },
+    {
+      id: 2,
       title: 'Buy',
       subtitle: 'Seeds & Inputs',
       icon: 'shopping-cart',
       iconFamily: 'MaterialIcons',
-      onPress: () => navigation.navigate('Buy'),
+      onPress: () => handleActionPress('Buy'),
     },
     {
-      id: 2,
+      id: 3,
       title: 'Rent',
       subtitle: 'Equipment',
       icon: 'tractor',
       iconFamily: 'MaterialCommunityIcons',
-      onPress: () => navigation.navigate('Rent'),
+      onPress: () => handleActionPress('Rent'),
+    },
+  ];
+
+  const handleAdditionalSectionPress = (screenName, requiresProfile = false) => {
+    if (requiresProfile && !isProfileComplete(user)) {
+      Alert.alert(
+        'Profile Incomplete',
+        'Please complete your profile to access this feature.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Complete Profile', 
+            onPress: () => navigation.navigate('Profile')
+          },
+        ]
+      );
+      return;
+    }
+    navigation.navigate(screenName);
+  };
+
+  const additionalSections = [
+    {
+      id: 4,
+      title: 'Reels',
+      subtitle: 'Watch Videos',
+      icon: 'video-library',
+      iconFamily: 'MaterialIcons',
+      onPress: () => handleAdditionalSectionPress('Reels'),
+      requiresProfile: false,
     },
     {
-      id: 3,
-      title: 'Sell',
-      subtitle: 'Products',
-      icon: 'local-offer',
+      id: 5,
+      title: 'Contact',
+      subtitle: 'Merchants',
+      icon: 'contacts',
       iconFamily: 'MaterialIcons',
-      onPress: () => navigation.navigate('Sell'),
+      onPress: () => handleAdditionalSectionPress('Contact'),
+      requiresProfile: false,
+    },
+    {
+      id: 6,
+      title: 'Weather',
+      subtitle: 'Forecast',
+      icon: 'wb-sunny',
+      iconFamily: 'MaterialIcons',
+      onPress: () => handleAdditionalSectionPress('Weather'),
+      requiresProfile: false,
+    },
+    {
+      id: 7,
+      title: 'Finance',
+      subtitle: 'Loan & KCC',
+      icon: 'account-balance',
+      iconFamily: 'MaterialIcons',
+      onPress: () => handleAdditionalSectionPress('Finance', true),
+      requiresProfile: true,
+    },
+    {
+      id: 8,
+      title: 'Chatbot',
+      subtitle: 'Get Help',
+      icon: 'chat-bubble-outline',
+      iconFamily: 'MaterialIcons',
+      onPress: () => handleAdditionalSectionPress('Chatbot'),
+      requiresProfile: false,
+    },
+    {
+      id: 9,
+      title: 'Complaint',
+      subtitle: 'Raise Issue',
+      icon: 'report-problem',
+      iconFamily: 'MaterialIcons',
+      onPress: () => handleAdditionalSectionPress('Complaint', true),
+      requiresProfile: true,
     },
   ];
 
@@ -388,6 +492,35 @@ const HomeScreen = ({ navigation }) => {
               showsVerticalScrollIndicator={false}
             >
 
+          {/* Profile Incomplete Modal */}
+          <Modal
+            visible={showProfileModal}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setShowProfileModal(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.profileModal}>
+                <View style={styles.modalHeader}>
+                  <Icon name="warning" size={28} color="#FF9800" />
+                  <Text style={styles.modalTitle}>Complete Your Profile</Text>
+                </View>
+                <Text style={styles.modalText}>
+                  Please complete your profile to access all features including orders, finance requests, and complaints.
+                </Text>
+                <TouchableOpacity 
+                  style={styles.modalButton}
+                  onPress={() => {
+                    setShowProfileModal(false);
+                    navigation.navigate('Profile');
+                  }}
+                >
+                  <Text style={styles.modalButtonText}>Complete Now</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
           {/* Welcome Card */}
           <View style={styles.welcomeCard}>
             <Text style={styles.welcomeText}>
@@ -407,7 +540,10 @@ const HomeScreen = ({ navigation }) => {
             </View>
           </View>
 
-          {/* Action Cards */}
+          {/* Primary Action Cards (Sell, Buy, Rent) */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Main Services</Text>
+          </View>
           <View style={styles.actionCardsContainer}>
             {actionCards.map((card) => (
               <TouchableOpacity 
@@ -428,6 +564,35 @@ const HomeScreen = ({ navigation }) => {
                 </Text>
                 <Text style={styles.actionCardSubtitle} numberOfLines={2} adjustsFontSizeToFit>
                   {card.subtitle}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Additional Sections */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>More Services</Text>
+          </View>
+          <View style={styles.additionalSectionsContainer}>
+            {additionalSections.map((section) => (
+              <TouchableOpacity 
+                key={section.id} 
+                style={styles.additionalSectionCard} 
+                onPress={section.onPress}
+                activeOpacity={0.7}
+              >
+                <View style={styles.additionalSectionIcon}>
+                  {section.iconFamily === 'MaterialIcons' ? (
+                    <Icon name={section.icon} size={24} color="#2E7D32" />
+                  ) : (
+                    <MaterialCommunityIcons name={section.icon} size={24} color="#2E7D32" />
+                  )}
+                </View>
+                <Text style={styles.additionalSectionTitle} numberOfLines={1}>
+                  {section.title}
+                </Text>
+                <Text style={styles.additionalSectionSubtitle} numberOfLines={1}>
+                  {section.subtitle}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -623,11 +788,108 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#1B5E20',
   },
+  sectionHeader: {
+    marginBottom: 12,
+    marginTop: 8,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1B5E20',
+  },
   actionCardsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 32,
+    marginBottom: 24,
     paddingHorizontal: 0,
+  },
+  additionalSectionsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+  },
+  additionalSectionCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    width: '30%',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+  },
+  additionalSectionIcon: {
+    width: 48,
+    height: 48,
+    backgroundColor: '#E8F5E8',
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  additionalSectionTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#1B5E20',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  additionalSectionSubtitle: {
+    fontSize: 11,
+    color: '#666666',
+    textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  profileModal: {
+    backgroundColor: '#FFF8E1',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 320,
+    alignItems: 'center',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FF9800',
+    marginLeft: 12,
+  },
+  modalText: {
+    fontSize: 14,
+    color: '#E65100',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  modalButton: {
+    backgroundColor: '#FF9800',
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 8,
+    width: '100%',
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   actionCard: {
     backgroundColor: '#FFFFFF',

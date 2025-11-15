@@ -1,12 +1,17 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useCart } from '../context/CartContext';
+import { useUser } from '../context/UserContext';
+import AuthAPI from '../services/api';
 import { getImageSource } from '../utils/imageUtils';
+import { isProfileComplete } from '../utils/profileUtils';
 
 const CartScreen = ({ navigation }) => {
   const { cartItems, removeFromCart, updateQuantity, clearCart, getCartTotal, getCartItemCount } = useCart();
+  const { user, getAuthToken, isLoggedIn } = useUser();
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
 
   const parsePrice = (price) => {
     if (typeof price === 'number') {
@@ -56,20 +61,133 @@ const CartScreen = ({ navigation }) => {
     );
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (cartItems.length === 0) {
       Alert.alert('Empty Cart', 'Your cart is empty. Add some products first.');
       return;
     }
-    Alert.alert('Checkout', 'Proceeding to checkout...', [
-      {
-        text: 'OK',
-        onPress: () => {
-          // TODO: Navigate to checkout screen
-          console.log('Navigate to checkout');
+
+    // Check if user is logged in (check both isLoggedIn state and user data)
+    if (!isLoggedIn && !user) {
+      Alert.alert(
+        'Authentication Required',
+        'Please sign in to place an order.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Sign In',
+            onPress: () => navigation.navigate('SignIn'),
+          },
+        ]
+      );
+      return;
+    }
+
+    // Check if profile is complete
+    if (!isProfileComplete(user)) {
+      Alert.alert(
+        'Profile Incomplete',
+        'Please complete your profile to place an order. You need to add: Mobile Number, PIN Code, Village, City, State, Bank Account, Bank Address, IFSC Code, and Kisan Card Number.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Complete Profile',
+            onPress: () => navigation.navigate('Profile'),
+          },
+        ]
+      );
+      return;
+    }
+
+    // Get auth token
+    const token = await getAuthToken();
+    if (!token) {
+      // If user data exists but token is missing, try to get it from AsyncStorage directly
+      console.log('Token not found, user logged in:', isLoggedIn, 'user exists:', !!user);
+      Alert.alert(
+        'Authentication Error',
+        'Unable to retrieve authentication token. Please sign in again.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Sign In',
+            onPress: () => navigation.navigate('SignIn'),
+          },
+        ]
+      );
+      return;
+    }
+
+    setIsCreatingOrder(true);
+
+    try {
+      // Prepare order items from cart
+      const orderItems = cartItems.map((item) => {
+        const productId = item.id || item.productId || item._id;
+        const productName = item.name || item.title || item.productName || 'Product';
+        const price = parsePrice(item.rentalPrice || item.price || item.pricePerUnit || 0);
+        const unit = item.rentalUnit || item.unit || item.unitType || 'kg';
+        const quantity = item.quantity || 1;
+
+        return {
+          productId: productId,
+          productName: productName,
+          quantity: quantity,
+          price: price,
+          unit: unit,
+        };
+      });
+
+      // Calculate total amount
+      const totalAmount = getCartTotal();
+
+      // Prepare order data
+      const orderData = {
+        orderType: 'buy',
+        items: orderItems,
+        totalAmount: totalAmount,
+        paymentMethod: 'card', // Default payment method, can be made dynamic
+        paymentStatus: 'pending',
+        merchantId: 'merchant123', // This should come from product data or be dynamic
+        merchantName: 'ABC Agri Store', // This should come from product data or be dynamic
+        deliveryAddress: {
+          street: user?.address?.street || '123 Farm Road',
+          city: user?.address?.city || 'Jabalpur',
+          state: user?.address?.state || 'MP',
+          pincode: user?.address?.pincode || '482001',
         },
-      },
-    ]);
+        notes: 'Please deliver in the morning', // Can be made editable
+      };
+
+      // Create order via API
+      const response = await AuthAPI.createOrder(orderData, token);
+
+      // Clear cart after successful order
+      await clearCart();
+
+      Alert.alert(
+        'Order Placed Successfully!',
+        `Your order has been placed. Order ID: ${response.orderId || response.id || 'N/A'}`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Navigate to orders screen or home
+              navigation.navigate('Orders');
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Error creating order:', error);
+      Alert.alert(
+        'Order Failed',
+        error.message || 'Failed to place order. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsCreatingOrder(false);
+    }
   };
 
   const cartTotal = getCartTotal();
@@ -177,10 +295,18 @@ const CartScreen = ({ navigation }) => {
               <Text style={styles.totalValue}>₹{cartTotal.toFixed(2)}</Text>
             </View>
             <TouchableOpacity 
-              style={styles.checkoutButton}
+              style={[styles.checkoutButton, isCreatingOrder && styles.checkoutButtonDisabled]}
               onPress={handleCheckout}
+              disabled={isCreatingOrder}
             >
-              <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
+              {isCreatingOrder ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                  <Text style={styles.checkoutButtonText}>Placing Order...</Text>
+                </View>
+              ) : (
+                <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
+              )}
             </TouchableOpacity>
           </View>
         </>
@@ -377,6 +503,14 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  checkoutButtonDisabled: {
+    opacity: 0.7,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

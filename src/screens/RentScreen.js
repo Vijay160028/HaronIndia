@@ -156,6 +156,7 @@ const dummyEquipment = [
 ];
 
 const RentScreen = ({ navigation }) => {
+  const [activeTab, setActiveTab] = useState('rentIn'); // 'rentIn' or 'rentOut'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [equipment, setEquipment] = useState([]);
@@ -291,19 +292,49 @@ const RentScreen = ({ navigation }) => {
         >
           <Icon name="arrow-back" size={24} color="#1B5E20" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Rent Farming Equipment</Text>
-        <TouchableOpacity 
-          style={styles.cartButton}
-          onPress={() => navigation.navigate('Cart')}
+        <Text style={styles.headerTitle}>Rent Equipment</Text>
+        {activeTab === 'rentIn' && (
+          <TouchableOpacity 
+            style={styles.cartButton}
+            onPress={() => navigation.navigate('Cart')}
+          >
+            <Icon name="shopping-cart" size={24} color="#1B5E20" />
+            {getCartItemCount() > 0 && (
+              <View style={styles.cartBadge}>
+                <Text style={styles.cartBadgeText}>
+                  {getCartItemCount() > 99 ? '99+' : getCartItemCount()}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        )}
+        {activeTab === 'rentOut' && (
+          <TouchableOpacity 
+            style={styles.addButton}
+            onPress={() => navigation.navigate('RentOutForm')}
+          >
+            <Icon name="add" size={24} color="#1B5E20" />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Tab Selector */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'rentIn' && styles.activeTab]}
+          onPress={() => setActiveTab('rentIn')}
         >
-          <Icon name="shopping-cart" size={24} color="#1B5E20" />
-          {getCartItemCount() > 0 && (
-            <View style={styles.cartBadge}>
-              <Text style={styles.cartBadgeText}>
-                {getCartItemCount() > 99 ? '99+' : getCartItemCount()}
-              </Text>
-            </View>
-          )}
+          <Text style={[styles.tabText, activeTab === 'rentIn' && styles.activeTabText]}>
+            Rent-In
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'rentOut' && styles.activeTab]}
+          onPress={() => setActiveTab('rentOut')}
+        >
+          <Text style={[styles.tabText, activeTab === 'rentOut' && styles.activeTabText]}>
+            Rent-Out
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -311,6 +342,8 @@ const RentScreen = ({ navigation }) => {
         style={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        {activeTab === 'rentIn' && (
+          <>
         {/* Search Bar */}
         <View style={styles.searchContainer}>
           <Icon name="search" size={20} color="#666666" style={styles.searchIcon} />
@@ -444,6 +477,34 @@ const RentScreen = ({ navigation }) => {
             />
           )}
         </View>
+          </>
+        )}
+
+        {activeTab === 'rentOut' && (
+          <View style={styles.rentOutContainer}>
+            <View style={styles.infoBanner}>
+              <MaterialCommunityIcons name="information" size={20} color="#2E7D32" />
+              <Text style={styles.infoText}>
+                List your equipment for rent. After submission, Merchant 3 (M3) will verify your equipment.
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.addEquipmentButton}
+              onPress={() => navigation.navigate('RentOutForm')}
+            >
+              <Icon name="add" size={24} color="#FFFFFF" />
+              <Text style={styles.addEquipmentButtonText}>Add Equipment for Rent</Text>
+            </TouchableOpacity>
+            <Text style={styles.sectionTitle}>My Listed Equipment</Text>
+            <View style={styles.emptyContainer}>
+              <MaterialCommunityIcons name="tractor" size={48} color="#999999" />
+              <Text style={styles.emptyText}>No equipment listed yet</Text>
+              <Text style={styles.emptySubtext}>
+                Start by adding your first equipment for rent
+              </Text>
+            </View>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -477,6 +538,69 @@ const styles = StyleSheet.create({
   cartButton: {
     padding: 5,
     position: 'relative',
+  },
+  addButton: {
+    padding: 5,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  activeTab: {
+    borderBottomColor: '#2E7D32',
+  },
+  tabText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666666',
+  },
+  activeTabText: {
+    color: '#2E7D32',
+  },
+  rentOutContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 15,
+  },
+  infoBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E9',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#2E7D32',
+    marginLeft: 10,
+  },
+  addEquipmentButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#2E7D32',
+    paddingVertical: 16,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  addEquipmentButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
   },
   cartBadge: {
     position: 'absolute',

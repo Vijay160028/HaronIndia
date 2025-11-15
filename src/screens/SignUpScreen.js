@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import { colors, typography, spacing } from '../constants/theme';
@@ -8,36 +9,22 @@ import AuthAPI from '../services/api';
 import { useUser } from '../context/UserContext';
 
 const SignUpScreen = ({ navigation }) => {
-  const [fullName, setFullName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [userType, setUserType] = useState('farmer');
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { saveUserData, refetchUserData } = useUser();
 
   const handleSignUp = async () => {
     // Client-side validation
-    if (!fullName || !phoneNumber || !email || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
+    if (!email || !password || !confirmPassword) {
+      Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
 
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
-      return;
-    }
-
-    if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
-      return;
-    }
-
-    // Validate phone number format (Indian mobile: 10 digits starting with 6-9)
-    const phoneRegex = /^[6-9][0-9]{9}$/;
-    if (!phoneRegex.test(phoneNumber)) {
-      Alert.alert('Error', 'Please enter a valid 10-digit Indian mobile number');
+    if (!termsAccepted) {
+      Alert.alert('Error', 'Please accept Terms & Conditions to continue');
       return;
     }
 
@@ -48,33 +35,60 @@ const SignUpScreen = ({ navigation }) => {
       return;
     }
 
+    if (password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       // Call signup API
       const response = await AuthAPI.signup({
-        fullName,
-        phoneNumber,
         email,
         password,
-        confirmPassword,
-        userType,
+        termsAccepted,
+        userType: 'farmer',
       });
 
-      // Extract token from response (handle different response formats)
-      let token = response.token || response.data?.token || response.authtoken || response.authToken || null;
+      // Extract JWT token from response (handle different response formats)
+      let token = 
+        response.token || 
+        response.data?.token || 
+        response.jwt || 
+        response.data?.jwt ||
+        response.jwtToken ||
+        response.data?.jwtToken ||
+        response.authtoken || 
+        response.authToken ||
+        response.data?.authToken ||
+        response.accessToken ||
+        response.data?.accessToken ||
+        null;
       
       // Ensure token is a string (not an object)
       if (token && typeof token !== 'string') {
         // If token is an object, try to extract the actual token string
         if (token.token) {
           token = token.token;
+        } else if (token.jwt) {
+          token = token.jwt;
         } else if (token.value) {
           token = token.value;
         } else {
           // If we can't extract a string, stringify it
           token = JSON.stringify(token);
         }
+      }
+
+      // Validate that we have a token
+      if (!token) {
+        throw new Error('No authentication token received from server');
       }
 
       // Save user data and token
@@ -100,24 +114,18 @@ const SignUpScreen = ({ navigation }) => {
         // Continue even if refetch fails - we already have user data from signup response
       }
 
-      // Show success message and navigate
+      // Show success message and navigate to Home Page
       Alert.alert(
         'Success',
-        'Account created successfully! Please verify your phone number.',
+        'Account created successfully!',
         [
           {
             text: 'OK',
             onPress: () => {
-              // Navigate to Phone Verification screen
-              navigation.navigate('PhoneVerification', {
-                step: '2 of 2',
-                userData: {
-                  userId: response.data.userId,
-                  phoneNumber: response.data.phoneNumber,
-                  email: response.data.email,
-                },
-                isSignUp: true,
-                token: token,
+              // Navigate directly to Home Page as per SRS
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'MainTabs' }],
               });
             },
           },
@@ -168,37 +176,7 @@ const SignUpScreen = ({ navigation }) => {
 
           <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Full Name</Text>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={styles.inputText}
-                  value={fullName}
-                  onChangeText={setFullName}
-                  placeholder="Enter your full name"
-                  placeholderTextColor="#999999"
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                />
-              </View>
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Phone Number</Text>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={styles.inputText}
-                  value={phoneNumber}
-                  onChangeText={setPhoneNumber}
-                  placeholder="Enter your phone number"
-                  placeholderTextColor="#999999"
-                  keyboardType="phone-pad"
-                  maxLength={10}
-                />
-              </View>
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email Address</Text>
+              <Text style={styles.label}>Email Address *</Text>
               <View style={styles.inputWrapper}>
                 <TextInput
                   style={styles.inputText}
@@ -214,7 +192,7 @@ const SignUpScreen = ({ navigation }) => {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Password</Text>
+              <Text style={styles.label}>Password *</Text>
               <View style={styles.inputWrapper}>
                 <TextInput
                   style={styles.inputText}
@@ -230,7 +208,7 @@ const SignUpScreen = ({ navigation }) => {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Confirm Password</Text>
+              <Text style={styles.label}>Confirm Password *</Text>
               <View style={styles.inputWrapper}>
                 <TextInput
                   style={styles.inputText}
@@ -243,6 +221,22 @@ const SignUpScreen = ({ navigation }) => {
                   autoCorrect={false}
                 />
               </View>
+            </View>
+
+            <View style={styles.checkboxContainer}>
+              <TouchableOpacity
+                style={styles.checkbox}
+                onPress={() => setTermsAccepted(!termsAccepted)}
+              >
+                {termsAccepted ? (
+                  <Icon name="check-box" size={24} color="#2E7D32" />
+                ) : (
+                  <Icon name="check-box-outline-blank" size={24} color="#999999" />
+                )}
+              </TouchableOpacity>
+              <Text style={styles.checkboxLabel}>
+                I accept the Terms & Conditions *
+              </Text>
             </View>
 
             <TouchableOpacity 
@@ -346,6 +340,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
+    position: 'relative',
   },
   inputText: {
     fontSize: 16,
@@ -391,6 +386,20 @@ const styles = StyleSheet.create({
   signInText: {
     color: '#2E7D32',
     fontWeight: 'bold',
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  checkbox: {
+    marginRight: 10,
+  },
+  checkboxLabel: {
+    fontSize: 14,
+    color: '#333333',
+    flex: 1,
   },
 });
 

@@ -91,9 +91,19 @@ export const UserProvider = ({ children }) => {
         const parsed = JSON.parse(token);
         // If parsing succeeds and it's an object, try to extract the token
         if (typeof parsed === 'object' && parsed !== null) {
-          return parsed.token || parsed.value || token;
+          // Try to get the actual token string from the object
+          const extractedToken = parsed.token || parsed.value || parsed.accessToken || parsed.access_token;
+          if (extractedToken && typeof extractedToken === 'string') {
+            return extractedToken;
+          }
+          // If we can't extract a string token, return null
+          return null;
         }
-        return token;
+        // If parsed is not an object, it might be a string that was double-stringified
+        if (typeof parsed === 'string') {
+          return parsed;
+        }
+        return null;
       } catch {
         // If parsing fails, it's already a string token, return as is
         return token;
@@ -126,6 +136,14 @@ export const UserProvider = ({ children }) => {
         fullName: userData.fullName || userData.name,
         email: userData.email,
         phoneNumber: userData.phoneNumber || userData.phone,
+        pinCode: userData.pinCode,
+        village: userData.village,
+        city: userData.city,
+        state: userData.state,
+        bankAccountNumber: userData.bankAccountNumber,
+        bankAddress: userData.bankAddress,
+        ifscCode: userData.ifscCode,
+        kisanCardNumber: userData.kisanCardNumber,
         userType: userData.userType,
         profileImage: userData.profileImage || userData.avatar || null,
         isEmailVerified: userData.isEmailVerified,

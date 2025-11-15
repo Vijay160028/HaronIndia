@@ -56,20 +56,35 @@ const AddProductScreen = ({ navigation, route }) => {
   };
 
   const categories = [
-    { id: 'grains', name: 'Grains', icon: 'corn' },
-    { id: 'vegetables', name: 'Vegetables', icon: 'carrot' },
-    { id: 'fruits', name: 'Fruits', icon: 'apple' },
-    { id: 'pulses', name: 'Pulses', icon: 'sprout' },
-    { id: 'spices', name: 'Spices', icon: 'chili-mild' },
-    { id: 'other', name: 'Other', icon: 'apps' },
+    {
+      id: 'grains',
+      name: 'Grains',
+      icon: 'corn',
+      subcategories: ['Wheat', 'Rice', 'Maize', 'Millets', 'Barley', 'Custom'],
+    },
+    {
+      id: 'perishable',
+      name: 'Perishable Products',
+      icon: 'food',
+      subcategories: ['Vegetables', 'Fruits', 'Flowers', 'Custom'],
+    },
+    {
+      id: 'ayurvedic',
+      name: 'Ayurvedic',
+      icon: 'medical-services',
+      subcategories: ['Giloy', 'Amla', 'Ashwagandha', 'Tulsi', 'Neem', 'Custom'],
+    },
+    {
+      id: 'premium',
+      name: 'Premium Products',
+      icon: 'star',
+      subcategories: ['Organic Grains', 'Honey', 'Saffron', 'Custom'],
+    },
   ];
 
   const units = [
     { id: 'kg', name: 'Kilogram (kg)' },
     { id: 'quintal', name: 'Quintal' },
-    { id: 'ton', name: 'Ton' },
-    { id: 'bag', name: 'Bag' },
-    { id: 'piece', name: 'Piece' },
   ];
 
   const requestCameraPermission = async () => {

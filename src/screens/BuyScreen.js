@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, FlatList, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, FlatList, ActivityIndicator, Modal, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AuthAPI from '../services/api';
 import { useCart } from '../context/CartContext';
+import { useUser } from '../context/UserContext';
 import { getImageSource } from '../utils/imageUtils';
+import { isProfileComplete } from '../utils/profileUtils';
 
 const BuyScreen = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -15,6 +17,7 @@ const BuyScreen = ({ navigation }) => {
   const [error, setError] = useState(null);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const { addToCart, getCartItemCount } = useCart();
+  const { user } = useUser();
 
   useEffect(() => {
     fetchProducts();
@@ -40,10 +43,9 @@ const BuyScreen = ({ navigation }) => {
 
   const categories = [
     { id: 'all', name: 'All', icon: 'apps' },
-    { id: 'seeds', name: 'Seeds', icon: 'sprout' },
+    { id: 'equipment', name: 'Equipment', icon: 'build' },
     { id: 'fertilizers', name: 'Fertilizers', icon: 'flask-outline' },
-    { id: 'pesticides', name: 'Pesticides', icon: 'spray' },
-    { id: 'tools', name: 'Tools', icon: 'tools' },
+    { id: 'seeds', name: 'Seeds', icon: 'sprout' },
   ];
 
   const filteredProducts = products.filter((product) => {
@@ -94,6 +96,20 @@ const BuyScreen = ({ navigation }) => {
             <TouchableOpacity 
               style={styles.addToCartButton}
               onPress={async () => {
+                if (!isProfileComplete(user)) {
+                  Alert.alert(
+                    'Profile Incomplete',
+                    'Please complete your profile to add items to cart. You need to add: Mobile Number, PIN Code, Village, City, State, Bank Account, Bank Address, IFSC Code, and Kisan Card Number.',
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      { 
+                        text: 'Complete Profile', 
+                        onPress: () => navigation.navigate('Profile')
+                      },
+                    ]
+                  );
+                  return;
+                }
                 const result = await addToCart(item, 1);
                 if (result.success) {
                   // Show success feedback (optional: could use a toast notification)
